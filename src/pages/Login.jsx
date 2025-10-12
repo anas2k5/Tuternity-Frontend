@@ -1,67 +1,80 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import api from "../api";
+import { AuthContext } from "../context/AuthContext";
+import { jwtDecode } from "jwt-decode";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    try {
-      // 🔹 Send login request
-      const res = await api.post("/auth/login", { email, password });
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const res = await axios.post("http://localhost:8081/api/auth/login", {
+      email,
+      password,
+    });
 
-      console.log("Login response:", res.data);
+    // ✅ Backend returns plain JWT token (might contain whitespace)
+    const token = res.data.trim(); // 👈 Trim any spaces/newlines
+    console.log("Token from backend:", token);
 
-      // ✅ Your backend returns ONLY the token string, so save it directly
-      localStorage.setItem("token", res.data);
+    const decoded = jwtDecode(token);
+    console.log("Decoded JWT:", decoded);
 
-      // 🔹 Get user details from token or fetch from API if needed
-      // For now, just redirect based on login role assumption
-      // Better: decode token -> extract role (STUDENT/TEACHER)
-      // Quick hack: assume student for test
-      // Example using jwt-decode (install it): npm install jwt-decode
-      // import jwt_decode from "jwt-decode";
-      // const decoded = jwt_decode(res.data);
-      // localStorage.setItem("role", decoded.role);
+    const role = decoded.role ? decoded.role.toUpperCase() : null;
+    console.log("Extracted Role:", role);
 
-      // ⬆ Uncomment the above if you want exact role from token
-
-      // 🚀 Redirect
-      navigate("/student"); // Default for now (change based on decoded role)
-    } catch (err) {
-      console.error("Login error:", err.response?.data || err.message);
-      alert("Invalid login credentials or forbidden access!");
+    if (!role) {
+      alert("❌ Role missing in token payload");
+      return;
     }
-  };
+
+    login({ token, role });
+
+    if (role === "STUDENT") navigate("/student");
+    else if (role === "TEACHER") navigate("/teacher");
+    else if (role === "ADMIN") navigate("/admin");
+    else navigate("/");
+
+  } catch (err) {
+    console.error("Login error:", err.response ? err.response.data : err);
+    alert("Invalid credentials or server error");
+  }
+};
 
   return (
-    <div className="flex h-screen items-center justify-center bg-gray-100">
-      <form
-        onSubmit={handleLogin}
-        className="bg-white p-6 rounded shadow-md w-80"
-      >
-        <h2 className="text-2xl font-bold mb-4">Login</h2>
-        <input
-          type="email"
-          placeholder="Email"
-          className="border p-2 w-full mb-2"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          className="border p-2 w-full mb-2"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <button className="bg-blue-500 text-white px-4 py-2 rounded w-full">
-          Login
-        </button>
-      </form>
+    <div className="flex justify-center items-center h-screen bg-gray-100">
+      <div className="bg-white shadow-lg rounded p-6 w-96">
+        <h2 className="text-2xl font-bold mb-4 text-center">Login</h2>
+        <form onSubmit={handleSubmit}>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="border w-full p-2 mb-3 rounded"
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="border w-full p-2 mb-3 rounded"
+            required
+          />
+          <button
+            type="submit"
+            className="bg-blue-600 text-white w-full py-2 rounded hover:bg-blue-700 transition"
+          >
+            Login
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
