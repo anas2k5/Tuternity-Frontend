@@ -2,79 +2,105 @@ import { useState, useContext } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import { jwtDecode } from "jwt-decode";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login } = useContext(AuthContext);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { setUser, setRole } = useContext(AuthContext);
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  try {
-    const res = await axios.post("http://localhost:8081/api/auth/login", {
-      email,
-      password,
-    });
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    console.log("🟢 Login button clicked");
+    setError("");
+    setLoading(true);
 
-    // ✅ Backend returns plain JWT token (might contain whitespace)
-    const token = res.data.trim(); // 👈 Trim any spaces/newlines
-    console.log("Token from backend:", token);
+    try {
+      console.log("🔹 handleSubmit triggered");
+      console.log("🔹 Sending login request...");
 
-    const decoded = jwtDecode(token);
-    console.log("Decoded JWT:", decoded);
+      const res = await axios.post("http://localhost:8081/api/auth/login", {
+        email,
+        password,
+      });
 
-    const role = decoded.role ? decoded.role.toUpperCase() : null;
-    console.log("Extracted Role:", role);
+      const data = res.data;
+      console.log("✅ Response received:", data);
 
-    if (!role) {
-      alert("❌ Role missing in token payload");
-      return;
+      const { token, role, name } = data;
+
+      // 🟩 Save token, role, and profile
+      localStorage.setItem("token", token);
+      localStorage.setItem("role", role);
+      localStorage.setItem(
+        "profile",
+        JSON.stringify({ email, name, role })
+      );
+
+      // 🟩 Update global auth context
+      setUser({ email, name, role });
+      setRole(role);
+
+      // 🟩 Redirect by role
+      if (role === "STUDENT" || role === "ROLE_STUDENT") {
+        navigate("/student");
+      } else if (role === "TEACHER" || role === "ROLE_TEACHER") {
+        navigate("/teacher");
+      } else if (role === "ADMIN" || role === "ROLE_ADMIN") {
+        navigate("/admin");
+      } else {
+        navigate("/not-authorized");
+      }
+    } catch (err) {
+      console.error("❌ Login failed:", err.response?.data || err.message);
+      setError(err.response?.data?.message || "Invalid credentials");
+    } finally {
+      setLoading(false);
     }
-
-    login({ token, role });
-
-    if (role === "STUDENT") navigate("/student");
-    else if (role === "TEACHER") navigate("/teacher");
-    else if (role === "ADMIN") navigate("/admin");
-    else navigate("/");
-
-  } catch (err) {
-    console.error("Login error:", err.response ? err.response.data : err);
-    alert("Invalid credentials or server error");
-  }
-};
+  };
 
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-100">
-      <div className="bg-white shadow-lg rounded p-6 w-96">
-        <h2 className="text-2xl font-bold mb-4 text-center">Login</h2>
-        <form onSubmit={handleSubmit}>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="border w-full p-2 mb-3 rounded"
-            required
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="border w-full p-2 mb-3 rounded"
-            required
-          />
-          <button
-            type="submit"
-            className="bg-blue-600 text-white w-full py-2 rounded hover:bg-blue-700 transition"
-          >
-            Login
-          </button>
-        </form>
-      </div>
+    <div className="flex items-center justify-center h-screen bg-gray-100">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white shadow-lg p-8 rounded-2xl w-full max-w-md"
+      >
+        <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
+
+        {error && (
+          <p className="bg-red-100 text-red-600 p-2 rounded mb-3 text-center">
+            {error}
+          </p>
+        )}
+
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full border p-2 rounded mb-3 focus:ring-2 focus:ring-blue-500 outline-none"
+          required
+        />
+
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full border p-2 rounded mb-3 focus:ring-2 focus:ring-blue-500 outline-none"
+          required
+        />
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+        >
+          {loading ? "Logging in..." : "Login"}
+        </button>
+      </form>
     </div>
   );
 }

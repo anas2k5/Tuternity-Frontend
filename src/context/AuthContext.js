@@ -1,52 +1,53 @@
-import React, { createContext, useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { createContext, useState, useEffect } from "react";
 
 export const AuthContext = createContext();
 
-export default function AuthProvider({ children }) {
-  const navigate = useNavigate();
-
+const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // ✅ New loading state
+  const [role, setRole] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // ✅ Load user from localStorage on first render
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const role = localStorage.getItem("role");
-    const profile = localStorage.getItem("profile");
+    const storedRole = localStorage.getItem("role");
+    const storedProfile = localStorage.getItem("profile");
 
-    if (token && role) {
-      setUser({
-        token,
-        role,
-        profile: profile ? JSON.parse(profile) : null,
-      });
+    let parsedProfile = null;
+    try {
+      parsedProfile = storedProfile ? JSON.parse(storedProfile) : null;
+    } catch {
+      parsedProfile = null;
     }
 
-    setLoading(false); // ✅ Done loading from storage
+    if (token && storedRole) {
+      setUser(parsedProfile);
+      setRole(storedRole);
+    }
+
+    setLoading(false);
   }, []);
 
-  // ✅ Login method
-  const login = useCallback(({ token, role, profile = null }) => {
-    localStorage.setItem("token", token);
-    localStorage.setItem("role", role);
-    if (profile) localStorage.setItem("profile", JSON.stringify(profile));
-
-    setUser({ token, role, profile });
-  }, []);
-
-  // ✅ Logout method
-  const logout = useCallback(() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    localStorage.removeItem("profile");
+  const logout = () => {
+    localStorage.clear();
     setUser(null);
-    navigate("/", { replace: true });
-  }, [navigate]);
+    setRole(null);
+    window.location.href = "/";
+  };
+
+  if (loading)
+    return (
+      <div className="flex items-center justify-center h-screen text-gray-600">
+        <p className="text-lg font-semibold animate-pulse">
+          Loading, please wait...
+        </p>
+      </div>
+    );
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, setUser, loading }}>
+    <AuthContext.Provider value={{ user, role, setUser, setRole, logout }}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
+
+export default AuthProvider;

@@ -1,0 +1,53 @@
+// src/components/BookTeacher.jsx
+import React, { useState } from "react";
+
+function BookTeacher({ teacherId, availabilityId }) {
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const handleBooking = async () => {
+    setLoading(true);
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setMessage("You must be logged in!");
+      setLoading(false);
+      return;
+    }
+
+    const bookingData = { teacherId, availabilityId };
+
+    try {
+      const response = await fetch("http://localhost:8080/api/bookings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token,
+        },
+        body: JSON.stringify(bookingData),
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error);
+      }
+
+      const result = await response.json();
+      setMessage(`Booking confirmed for ${result.availability.date} at ${result.availability.startTime}`);
+    } catch (err) {
+      setMessage("Booking failed: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={handleBooking} disabled={loading}>
+        {loading ? "Booking..." : "Book Now"}
+      </button>
+      {message && <p>{message}</p>}
+    </div>
+  );
+}
+
+export default BookTeacher;

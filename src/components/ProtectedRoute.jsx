@@ -2,23 +2,17 @@ import React, { useContext } from "react";
 import { Navigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 
-export default function ProtectedRoute({ children, role }) {
-  const { user, loading } = useContext(AuthContext);
+const ProtectedRoute = ({ children, role }) => {
+  const { role: userRole } = useContext(AuthContext);
 
-  // ✅ Wait until user is loaded from localStorage
-  if (loading) return null; // or a spinner UI
+  const normalize = (r) =>
+    r ? r.replace(/^ROLE_/, "").trim().toUpperCase() : "";
 
-  // ✅ If not logged in, redirect to home/login
-  if (!user) return <Navigate to="/" replace />;
+  if (!userRole) return <Navigate to="/" />;
+  if (normalize(userRole) !== normalize(role))
+    return <Navigate to="/not-authorized" />;
 
-  // ✅ Role-based protection
-  if (role) {
-    const allowed = Array.isArray(role) ? role : [role];
-    if (!allowed.includes(user.role)) {
-      return <Navigate to="/not-authorized" replace />;
-    }
-  }
-
-  // ✅ Access granted
   return children;
-}
+};
+
+export default ProtectedRoute;
