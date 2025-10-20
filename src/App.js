@@ -13,6 +13,9 @@ import NotAuthorized from "./pages/NotAuthorized";
 import BrowseTeachers from "./pages/BrowseTeachers";
 import StudentBookings from "./pages/StudentBookings";
 import TeacherDetails from "./pages/TeacherDetails";
+// ✅ NEW IMPORTS for Teacher Management
+import ManageTeacherProfile from "./pages/ManageTeacherProfile"; 
+import ManageTeacherAvailability from "./pages/ManageTeacherAvailability"; 
 
 
 function App() {
@@ -25,7 +28,7 @@ function App() {
             <Route path="/" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
-            {/* Teacher Dashboard */}
+            {/* 🛑 TEACHER DASHBOARD ROUTES 🛑 */}
             <Route
               path="/teacher"
               element={
@@ -34,6 +37,28 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+            {/* ✅ NEW: Teacher Manage Profile Route */}
+            <Route
+              path="/teacher/profile"
+              element={
+                <ProtectedRoute role="TEACHER">
+                  <ManageTeacherProfile />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ✅ NEW: Teacher Manage Availability Route */}
+            <Route
+              path="/teacher/availability"
+              element={
+                <ProtectedRoute role="TEACHER">
+                  <ManageTeacherAvailability />
+                </ProtectedRoute>
+              }
+            />
+            {/* 🛑 END TEACHER ROUTES 🛑 */}
+
 
             {/* Student Dashboard */}
             <Route
@@ -65,6 +90,12 @@ function App() {
               }
             />
 
+            {/* ✅ Teacher Details (Student View) */}
+            <Route
+              path="/teacher/:id"
+              element={<ProtectedRoute role="STUDENT"><TeacherDetails /></ProtectedRoute>}
+            />
+
             {/* Admin Dashboard */}
             <Route
               path="/admin"
@@ -74,13 +105,10 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
-  path="/teacher/:id"
-  element={<ProtectedRoute role="STUDENT"><TeacherDetails /></ProtectedRoute>}
-/>
-
+            
             {/* Unauthorized Route */}
             <Route path="/not-authorized" element={<NotAuthorized />} />
+            
           </Routes>
         </div>
       </AuthProvider>
