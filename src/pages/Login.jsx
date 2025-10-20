@@ -29,18 +29,9 @@ export default function Login() {
       const data = res.data;
       console.log("✅ Response received:", data);
 
-      // CRITICAL: Assuming your backend response now includes the user's ID
-      // If the ID is returned inside a nested 'user' object:
-      // const { token, role, name, user } = data;
-      // const userId = user ? user.id : null; 
-      
-      // OPTION 1: Assuming your backend returns id, name, role at the top level (based on your console log)
-      const { token, role, name, id } = data; // <--- Extract the 'id' here
-
-      // OPTION 2: If your backend returns the user object nested:
-      // const userId = data.user.id; 
-      
-      const userId = id; // Use the extracted ID
+      // Extract required data, assuming backend returns id, name, role at the top level
+      const { token, role, name, id } = data;
+      const userId = id;
 
       if (!userId) {
           throw new Error("Login failed: User ID not received from server.");
@@ -51,7 +42,7 @@ export default function Login() {
       localStorage.setItem("role", role);
       localStorage.setItem(
         "profile",
-        JSON.stringify({ email, name, role, id: userId }) // <--- FIX: Save the 'id'
+        JSON.stringify({ email, name, role, id: userId })
       );
 
       // 🟩 Update global auth context
@@ -108,13 +99,26 @@ export default function Login() {
           required
         />
 
+        {/* Login Button */}
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition mb-4"
         >
           {loading ? "Logging in..." : "Login"}
         </button>
+
+        {/* Sign Up Link/Button */}
+        <p className="text-center text-sm">
+          Don't have an account?{" "}
+          <button
+            type="button" // Use type="button" to prevent form submission
+            onClick={() => navigate("/register")}
+            className="text-blue-600 font-medium hover:text-blue-800"
+          >
+            Sign Up
+          </button>
+        </p>
       </form>
     </div>
   );
