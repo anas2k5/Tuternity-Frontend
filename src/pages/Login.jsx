@@ -29,18 +29,33 @@ export default function Login() {
       const data = res.data;
       console.log("✅ Response received:", data);
 
-      const { token, role, name } = data;
+      // CRITICAL: Assuming your backend response now includes the user's ID
+      // If the ID is returned inside a nested 'user' object:
+      // const { token, role, name, user } = data;
+      // const userId = user ? user.id : null; 
+      
+      // OPTION 1: Assuming your backend returns id, name, role at the top level (based on your console log)
+      const { token, role, name, id } = data; // <--- Extract the 'id' here
+
+      // OPTION 2: If your backend returns the user object nested:
+      // const userId = data.user.id; 
+      
+      const userId = id; // Use the extracted ID
+
+      if (!userId) {
+          throw new Error("Login failed: User ID not received from server.");
+      }
 
       // 🟩 Save token, role, and profile
       localStorage.setItem("token", token);
       localStorage.setItem("role", role);
       localStorage.setItem(
         "profile",
-        JSON.stringify({ email, name, role })
+        JSON.stringify({ email, name, role, id: userId }) // <--- FIX: Save the 'id'
       );
 
       // 🟩 Update global auth context
-      setUser({ email, name, role });
+      setUser({ email, name, role, id: userId });
       setRole(role);
 
       // 🟩 Redirect by role

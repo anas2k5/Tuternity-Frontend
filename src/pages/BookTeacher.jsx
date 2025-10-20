@@ -17,7 +17,7 @@ function BookTeacher({ teacherId, availabilityId }) {
     const bookingData = { teacherId, availabilityId };
 
     try {
-      const response = await fetch("http://localhost:8080/api/bookings", {
+      const response = await fetch("http://localhost:8081/api/bookings", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
