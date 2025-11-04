@@ -18,38 +18,33 @@ export default function Login() {
     setLoading(true);
 
     try {
-      console.log("🔹 handleSubmit triggered");
-      console.log("🔹 Sending login request...");
+      console.log("🔹 Sending login request to backend...");
 
       const res = await axios.post("http://localhost:8081/api/auth/login", {
         email,
         password,
       });
 
-      const data = res.data;
-      console.log("✅ Response received:", data);
-
-      // Extract required data, assuming backend returns id, name, role at the top level
-      const { token, role, name, id } = data;
+      const { token, role, name, id } = res.data;
       const userId = id;
 
-      if (!userId) {
-          throw new Error("Login failed: User ID not received from server.");
+      if (!token || !userId) {
+        throw new Error("Invalid response from server. Missing token or userId.");
       }
 
-      // 🟩 Save token, role, and profile
+      // 🟩 Save to localStorage
       localStorage.setItem("token", token);
       localStorage.setItem("role", role);
-      localStorage.setItem(
-        "profile",
-        JSON.stringify({ email, name, role, id: userId })
-      );
+      localStorage.setItem("profile", JSON.stringify({ email, name, role, id: userId }));
 
-      // 🟩 Update global auth context
+      // 🟩 Update global context
       setUser({ email, name, role, id: userId });
       setRole(role);
 
-      // 🟩 Redirect by role
+      // 🟩 Automatically include token for future requests
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+      // 🟩 Navigate based on role
       if (role === "STUDENT" || role === "ROLE_STUDENT") {
         navigate("/student");
       } else if (role === "TEACHER" || role === "ROLE_TEACHER") {
@@ -59,9 +54,10 @@ export default function Login() {
       } else {
         navigate("/not-authorized");
       }
+
     } catch (err) {
       console.error("❌ Login failed:", err.response?.data || err.message);
-      setError(err.response?.data?.message || "Invalid credentials");
+      setError(err.response?.data?.message || "Invalid credentials. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -99,7 +95,6 @@ export default function Login() {
           required
         />
 
-        {/* Login Button */}
         <button
           type="submit"
           disabled={loading}
@@ -108,11 +103,10 @@ export default function Login() {
           {loading ? "Logging in..." : "Login"}
         </button>
 
-        {/* Sign Up Link/Button */}
         <p className="text-center text-sm">
-          Don't have an account?{" "}
+          Don’t have an account?{" "}
           <button
-            type="button" // Use type="button" to prevent form submission
+            type="button"
             onClick={() => navigate("/register")}
             className="text-blue-600 font-medium hover:text-blue-800"
           >

@@ -8,7 +8,7 @@ export default function Navbar() {
   return (
     <nav className="bg-blue-600 text-white p-4 flex justify-between items-center">
       <div className="flex items-center gap-4">
-        <Link to="/" className="font-bold text-lg">SmartTutor</Link>
+        <Link to="/" className="font-bold text-lg">Tuternity</Link>
         {user?.role === "TEACHER" && <Link to="/teacher">Dashboard</Link>}
         {user?.role === "STUDENT" && <Link to="/student">Dashboard</Link>}
         {user?.role === "ADMIN" && <Link to="/admin">Admin</Link>}

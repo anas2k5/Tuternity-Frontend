@@ -13,10 +13,8 @@ import NotAuthorized from "./pages/NotAuthorized";
 import BrowseTeachers from "./pages/BrowseTeachers";
 import StudentBookings from "./pages/StudentBookings";
 import TeacherDetails from "./pages/TeacherDetails";
-// ✅ NEW IMPORTS for Teacher Management
-import ManageTeacherProfile from "./pages/ManageTeacherProfile"; 
-import ManageTeacherAvailability from "./pages/ManageTeacherAvailability"; 
-
+import ManageTeacherProfile from "./pages/ManageTeacherProfile";
+import ManageTeacherAvailability from "./pages/ManageTeacherAvailability";
 
 function App() {
   return (
@@ -26,9 +24,10 @@ function App() {
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Login />} />
+            <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
-            {/* 🛑 TEACHER DASHBOARD ROUTES 🛑 */}
+            {/* Teacher */}
             <Route
               path="/teacher"
               element={
@@ -37,8 +36,6 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
-            {/* ✅ NEW: Teacher Manage Profile Route */}
             <Route
               path="/teacher/profile"
               element={
@@ -47,8 +44,6 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
-            {/* ✅ NEW: Teacher Manage Availability Route */}
             <Route
               path="/teacher/availability"
               element={
@@ -57,10 +52,8 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            {/* 🛑 END TEACHER ROUTES 🛑 */}
 
-
-            {/* Student Dashboard */}
+            {/* Student */}
             <Route
               path="/student"
               element={
@@ -69,8 +62,6 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
-            {/* ✅ Student Browse Teachers */}
             <Route
               path="/student/teachers"
               element={
@@ -79,8 +70,6 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
-            {/* ✅ Student Bookings */}
             <Route
               path="/student/bookings"
               element={
@@ -90,13 +79,17 @@ function App() {
               }
             />
 
-            {/* ✅ Teacher Details (Student View) */}
+            {/* Teacher details view (student access) */}
             <Route
               path="/teacher/:id"
-              element={<ProtectedRoute role="STUDENT"><TeacherDetails /></ProtectedRoute>}
+              element={
+                <ProtectedRoute role="STUDENT">
+                  <TeacherDetails />
+                </ProtectedRoute>
+              }
             />
 
-            {/* Admin Dashboard */}
+            {/* Admin */}
             <Route
               path="/admin"
               element={
@@ -105,10 +98,9 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            
-            {/* Unauthorized Route */}
+
+            {/* Misc */}
             <Route path="/not-authorized" element={<NotAuthorized />} />
-            
           </Routes>
         </div>
       </AuthProvider>

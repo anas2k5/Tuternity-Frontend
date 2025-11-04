@@ -1,58 +1,81 @@
-// TeacherDetails.jsx
+// ✅ TeacherDetails.jsx
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../api";
 import Navbar from "../components/Navbar";
 
 export default function TeacherDetails() {
-  const { id } = useParams();
+  const { id } = useParams(); // this 'id' comes from the route /teacher/:id
   const [teacher, setTeacher] = useState(null);
   const [slots, setSlots] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Correctly fetches teacher and availability data
-    api.get(`/teacher/${id}`).then((res) => setTeacher(res.data));
-    api.get(`/availability/teacher/${id}`).then((res) => setSlots(res.data));
-  }, [id]);
+    const fetchData = async () => {
+      try {
+        console.log("🔹 Fetching teacher details...");
+        const teacherRes = await api.get(`/teacher/${id}`);
+        setTeacher(teacherRes.data);
+
+        console.log("🔹 Fetching availability slots...");
+        const slotsRes = await api.get(`/availability/teacher/${id}`);
+        setSlots(slotsRes.data);
+      } catch (err) {
+        console.error("❌ Failed to load teacher details:", err);
+        if (err.response?.status === 403) {
+          alert("You are not authorized. Please log in again.");
+          navigate("/login");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id, navigate]);
 
   const handleBook = async (slotId) => {
     try {
-      // Corrected API call to use POST method with a JSON body
-      await api.post(`/bookings`, {
+      console.log(`📅 Booking slot ID: ${slotId}`);
+      const res = await api.post(`/bookings`, {
         teacherId: id,
         availabilityId: slotId,
       });
 
-      alert("Booking confirmed!");
+      console.log("✅ Booking success:", res.data);
+      alert("✅ Booking confirmed!");
       navigate("/student/bookings");
     } catch (err) {
-      // Improved error handling to show the real backend error
-      alert(err.response?.data?.message || "Failed to book slot");
+      console.error("❌ Booking failed:", err);
+      const msg =
+        err.response?.data?.message || "Failed to book slot. Please try again.";
+      alert(msg);
     }
   };
 
-  if (!teacher) return <div>Loading...</div>;
+  if (loading) return <div className="p-6">Loading...</div>;
+  if (!teacher) return <div className="p-6">Teacher not found.</div>;
 
   return (
     <div>
       <Navbar />
       <div className="p-6">
-        <h1 className="text-2xl font-bold">{teacher.user.name}</h1>
+        <h1 className="text-2xl font-bold">{teacher.user?.name}</h1>
         <p className="mt-2">Subject: {teacher.subject}</p>
         <p>Skills: {teacher.skills}</p>
         <p>Hourly Rate: ₹{teacher.hourlyRate}/hr</p>
 
         <h2 className="text-xl mt-6 mb-2 font-semibold">Available Slots</h2>
         {slots.length === 0 ? (
-          <p>No slots available.</p>
+          <p>No slots available for this teacher.</p>
         ) : (
           <div className="grid grid-cols-2 gap-4">
             {slots.map((s) => (
               <div
                 key={s.id}
                 className={`border p-3 rounded shadow flex justify-between items-center ${
-                  s.booked ? "bg-gray-100" : ""
+                  s.booked ? "bg-gray-200" : "bg-white"
                 }`}
               >
                 <span>
@@ -64,7 +87,7 @@ export default function TeacherDetails() {
                   className={`px-3 py-1 rounded ${
                     s.booked
                       ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-blue-500 text-white"
+                      : "bg-blue-500 text-white hover:bg-blue-600"
                   }`}
                 >
                   {s.booked ? "Booked" : "Book"}

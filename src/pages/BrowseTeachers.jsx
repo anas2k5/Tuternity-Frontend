@@ -1,5 +1,4 @@
-// src/pages/BrowseTeachers.jsx
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 import Navbar from "../components/Navbar";
@@ -7,73 +6,64 @@ import Navbar from "../components/Navbar";
 export default function BrowseTeachers() {
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
-    let mounted = true;
-    setLoading(true);
-    api
-      .get("/teacher")
-      .then((res) => {
-        if (!mounted) return;
-        setTeachers(res.data || []);
-      })
-      .catch((err) => {
-        console.error("Failed to load teachers:", err);
-        if (!mounted) return;
-        setError("Failed to load teachers. Try again later.");
-      })
-      .finally(() => {
-        if (!mounted) return;
+    const fetchTeachers = async () => {
+      try {
+        const res = await api.get("/teacher");
+        console.log("DEBUG: teachers", res.data);
+        setTeachers(res.data);
+      } catch (err) {
+        console.error("❌ Failed to fetch teachers:", err);
+      } finally {
         setLoading(false);
-      });
-
-    return () => {
-      mounted = false;
+      }
     };
+    fetchTeachers();
   }, []);
+
+  if (loading) return <div className="p-6">Loading teachers...</div>;
 
   return (
     <div>
       <Navbar />
       <div className="p-6">
-        <h1 className="text-2xl font-bold mb-4">Available Teachers</h1>
+        <h1 className="text-2xl font-bold mb-4">Browse Teachers</h1>
 
-        {loading ? (
-          <p>Loading teachers...</p>
-        ) : error ? (
-          <p className="text-red-600">{error}</p>
-        ) : teachers.length === 0 ? (
-          <p>No teachers available.</p>
+        {teachers.length === 0 ? (
+          <p>No teachers found.</p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-3 sm:grid-cols-2 gap-6">
             {teachers.map((t) => (
               <div
                 key={t.id}
-                className="p-4 border rounded shadow hover:shadow-lg transition"
+                className="border rounded-lg shadow-md bg-white p-4 flex flex-col justify-between hover:shadow-lg transition-all"
               >
-                <h2 className="font-semibold text-lg">{t.user?.name || "Unknown"}</h2>
-                <p className="text-sm">Subject: {t.subject || "N/A"}</p>
-                <p className="text-sm">Skills: {t.skills || "N/A"}</p>
-                <p className="text-sm">Hourly Rate: ₹{t.hourlyRate ?? "N/A"}/hr</p>
-
-                <div className="mt-3 flex gap-2">
-                  <button
-                    onClick={() => navigate(`/teacher/${t.id}`)}
-                    className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
-                  >
-                    View Details
-                  </button>
-
-                  {/* Book Now navigates to details page so user can pick a slot */}
-                  <button
-                    onClick={() => navigate(`/teacher/${t.id}`)}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
-                  >
-                    Book Now
-                  </button>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    {t.user?.name}
+                  </h2>
+                  <p className="text-gray-600 mt-1">Subject: {t.subject}</p>
+                  <p className="text-gray-600">Skills: {t.skills}</p>
+                  <p className="text-gray-600">
+                    Experience: {t.experienceYears} years
+                  </p>
+                  <p className="text-gray-600">
+                    Hourly Rate: ₹{t.hourlyRate || 0}/hr
+                  </p>
+                  <p className="text-gray-600 mt-1">City: {t.city}</p>
                 </div>
+
+                <button
+                  onClick={() => {
+                    console.log("Navigate with teacher id:", t.id, "user id:", t.user?.id);
+                    navigate(`/teacher/${t.id}`);
+                  }}
+                  className="mt-4 bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition"
+                >
+                  View Details
+                </button>
               </div>
             ))}
           </div>
