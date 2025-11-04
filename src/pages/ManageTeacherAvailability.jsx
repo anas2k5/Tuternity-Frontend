@@ -1,56 +1,41 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../api"; // ✅ use authenticated axios instance
 
 const ManageTeacherAvailability = () => {
   const [date, setDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [slots, setSlots] = useState([]);
-  const [teacherId, setTeacherId] = useState(null);
 
-  // ✅ Replace with your backend API base URL
-  const API_URL = "http://localhost:8081/api/availability";
+  const API_URL = "/availability"; // since api.js already prefixes /api
 
-  // Fetch teacher info (optional if you store teacherId in token)
   useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem("user"));
-    if (userData && userData.id) {
-      setTeacherId(userData.id);
-      fetchSlots(userData.id);
-    }
+    fetchSlots();
   }, []);
 
-  // ✅ Fetch existing availability slots
-  const fetchSlots = async (id) => {
+  const fetchSlots = async () => {
     try {
-      const response = await axios.get(`${API_URL}/${id}`);
+      const response = await api.get(`${API_URL}/me`);
       setSlots(response.data);
     } catch (error) {
       console.error("Error fetching availability:", error);
     }
   };
 
-  // ✅ Handle Add Availability
   const handleAddAvailability = async (e) => {
     e.preventDefault();
-
     if (!date || !startTime || !endTime) {
       alert("Please fill all fields!");
       return;
     }
 
     try {
-      await axios.post(`${API_URL}/${teacherId}`, {
-        date,
-        startTime,
-        endTime,
-      });
-
+      await api.post(`${API_URL}`, { date, startTime, endTime });
       alert("Availability added successfully!");
       setDate("");
       setStartTime("");
       setEndTime("");
-      fetchSlots(teacherId);
+      fetchSlots();
     } catch (error) {
       console.error("Error adding availability:", error);
       alert("Failed to add availability!");
@@ -103,7 +88,6 @@ const ManageTeacherAvailability = () => {
         </button>
       </form>
 
-      {/* ✅ Display added slots */}
       <div className="mt-6">
         <h3 className="text-lg font-semibold mb-2">Your Slots</h3>
         {slots.length === 0 ? (
