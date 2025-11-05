@@ -15,6 +15,7 @@ import StudentBookings from "./pages/StudentBookings";
 import TeacherDetails from "./pages/TeacherDetails";
 import ManageTeacherProfile from "./pages/ManageTeacherProfile";
 import ManageTeacherAvailability from "./pages/ManageTeacherAvailability";
+import TeacherBookings from "./pages/TeacherBookings"; // ✅ NEW IMPORT
 
 function App() {
   return (
@@ -27,7 +28,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
-            {/* Teacher */}
+            {/* Teacher Routes */}
             <Route
               path="/teacher"
               element={
@@ -52,8 +53,16 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/teacher/bookings"
+              element={
+                <ProtectedRoute role="TEACHER">
+                  <TeacherBookings />
+                </ProtectedRoute>
+              }
+            />
 
-            {/* Student */}
+            {/* Student Routes */}
             <Route
               path="/student"
               element={
@@ -79,7 +88,7 @@ function App() {
               }
             />
 
-            {/* Teacher details view (student access) */}
+            {/* Teacher details (viewable by students) */}
             <Route
               path="/teacher/:id"
               element={
@@ -89,7 +98,7 @@ function App() {
               }
             />
 
-            {/* Admin */}
+            {/* Admin Routes */}
             <Route
               path="/admin"
               element={

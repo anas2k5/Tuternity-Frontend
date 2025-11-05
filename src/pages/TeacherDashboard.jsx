@@ -1,18 +1,20 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom'; // CRITICAL IMPORT
-import Navbar from '../components/Navbar'; // Assuming you use a Navbar
+import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
 
 export default function TeacherDashboard() {
   const navigate = useNavigate();
-  
-  // Handler to navigate to the profile management page
+
   const handleManageProfile = () => {
-    navigate('/teacher/profile'); 
+    navigate('/teacher/profile');
   };
 
-  // Handler to navigate to the availability management page
   const handleManageAvailability = () => {
-    navigate('/teacher/availability'); 
+    navigate('/teacher/availability');
+  };
+
+  const handleViewBookings = () => {
+    navigate('/teacher/bookings');
   };
 
   return (
@@ -22,31 +24,47 @@ export default function TeacherDashboard() {
         <h1 className="text-2xl font-bold mb-6">Teacher Dashboard</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
-          {/* Manage Profile Button/Card */}
+          {/* Manage Profile */}
           <div
-            onClick={handleManageProfile} // Attach the click handler
+            onClick={handleManageProfile}
             className="bg-white shadow-lg p-6 rounded-xl cursor-pointer hover:bg-gray-50 transition duration-200"
           >
             <h2 className="text-lg font-semibold text-gray-800">
-              <span className="mr-2" role="img" aria-label="Profile Icon">👤</span> 
+              <span className="mr-2" role="img" aria-label="Profile Icon">👤</span>
               Manage Profile
             </h2>
-            <p className="text-sm text-gray-600 mt-2">Update your bio, subject, skills, and hourly rate.</p>
+            <p className="text-sm text-gray-600 mt-2">
+              Update your bio, subject, skills, and hourly rate.
+            </p>
           </div>
 
-          {/* Manage Availability Button/Card */}
+          {/* Manage Availability */}
           <div
-            onClick={handleManageAvailability} // Attach the click handler
+            onClick={handleManageAvailability}
             className="bg-white shadow-lg p-6 rounded-xl cursor-pointer hover:bg-gray-50 transition duration-200"
           >
             <h2 className="text-lg font-semibold text-gray-800">
               <span className="mr-2" role="img" aria-label="Calendar Icon">📅</span>
               Manage Availability
             </h2>
-            <p className="text-sm text-gray-600 mt-2">View, add, or remove your available time slots for students.</p>
+            <p className="text-sm text-gray-600 mt-2">
+              View, add, or remove your available time slots for students.
+            </p>
           </div>
 
+          {/* My Bookings */}
+          <div
+            onClick={handleViewBookings}
+            className="bg-white shadow-lg p-6 rounded-xl cursor-pointer hover:bg-gray-50 transition duration-200"
+          >
+            <h2 className="text-lg font-semibold text-gray-800">
+              <span className="mr-2" role="img" aria-label="Bookings Icon">📖</span>
+              My Bookings
+            </h2>
+            <p className="text-sm text-gray-600 mt-2">
+              View all bookings from your students and manage their status.
+            </p>
+          </div>
         </div>
       </div>
     </div>

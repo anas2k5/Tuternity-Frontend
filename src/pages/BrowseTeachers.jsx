@@ -6,16 +6,20 @@ import Navbar from "../components/Navbar";
 export default function BrowseTeachers() {
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchTeachers = async () => {
       try {
-        const res = await api.get("/teacher");
-        console.log("DEBUG: teachers", res.data);
+        // ✅ Correct endpoint — matches backend public route
+        const res = await api.get("/teachers");
+
+        console.log("✅ Teachers fetched:", res.data);
         setTeachers(res.data);
       } catch (err) {
         console.error("❌ Failed to fetch teachers:", err);
+        setError("Failed to load teachers. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -23,7 +27,13 @@ export default function BrowseTeachers() {
     fetchTeachers();
   }, []);
 
-  if (loading) return <div className="p-6">Loading teachers...</div>;
+  if (loading)
+    return (
+      <div>
+        <Navbar />
+        <div className="p-6 text-gray-700">Loading teachers...</div>
+      </div>
+    );
 
   return (
     <div>
@@ -31,8 +41,12 @@ export default function BrowseTeachers() {
       <div className="p-6">
         <h1 className="text-2xl font-bold mb-4">Browse Teachers</h1>
 
+        {error && (
+          <p className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</p>
+        )}
+
         {teachers.length === 0 ? (
-          <p>No teachers found.</p>
+          <p className="text-gray-600">No teachers found.</p>
         ) : (
           <div className="grid md:grid-cols-3 sm:grid-cols-2 gap-6">
             {teachers.map((t) => (
@@ -42,25 +56,29 @@ export default function BrowseTeachers() {
               >
                 <div>
                   <h2 className="text-xl font-semibold text-gray-800">
-                    {t.user?.name}
+                    {t.user?.name || "Unnamed Teacher"}
                   </h2>
-                  <p className="text-gray-600 mt-1">Subject: {t.subject}</p>
-                  <p className="text-gray-600">Skills: {t.skills}</p>
+                  <p className="text-gray-600 mt-1">
+                    Subject: {t.subject || "Not specified"}
+                  </p>
                   <p className="text-gray-600">
-                    Experience: {t.experienceYears} years
+                    Skills: {t.skills || "Not specified"}
+                  </p>
+                  <p className="text-gray-600">
+                    Experience: {t.experienceYears || 0} years
                   </p>
                   <p className="text-gray-600">
                     Hourly Rate: ₹{t.hourlyRate || 0}/hr
                   </p>
-                  <p className="text-gray-600 mt-1">City: {t.city}</p>
+                  <p className="text-gray-600 mt-1">City: {t.city || "N/A"}</p>
                 </div>
 
                 <button
                   onClick={() => {
-                    console.log("Navigate with teacher id:", t.id, "user id:", t.user?.id);
+                    console.log("Navigating to teacher:", t.id);
                     navigate(`/teacher/${t.id}`);
                   }}
-                  className="mt-4 bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition"
+                  className="mt-4 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
                 >
                   View Details
                 </button>

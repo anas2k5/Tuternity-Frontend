@@ -1,117 +1,103 @@
 import React, { useEffect, useState } from "react";
-import api from "../api";
-import dayjs from "dayjs";
-import Navbar from "../components/Navbar";
+import api from "../api"; // ✅ authenticated axios instance
 
 const TeacherBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const API_URL = "/bookings/teacher";
+
   useEffect(() => {
     fetchBookings();
   }, []);
 
+  // ✅ Fetch teacher’s bookings
   const fetchBookings = async () => {
     try {
-      const res = await api.get("/bookings/teacher/me");
-      setBookings(res.data || []);
-    } catch (err) {
-      console.error("Error fetching teacher bookings:", err);
+      setLoading(true);
+      const teacherRes = await api.get("/teachers/me"); // Get logged-in teacher profile
+      const teacherId = teacherRes.data.id;
+
+      const response = await api.get(`${API_URL}/${teacherId}`);
+      setBookings(response.data);
+    } catch (error) {
+      console.error("Error fetching teacher bookings:", error);
+      alert("Failed to load bookings!");
     } finally {
       setLoading(false);
     }
   };
 
-  const today = dayjs();
-  const upcoming = bookings.filter((b) => dayjs(b.date).isAfter(today, "day"));
-  const past = bookings.filter((b) => dayjs(b.date).isBefore(today, "day"));
+  // ✅ Cancel a booking (by teacher)
+  const handleCancel = async (bookingId) => {
+    if (!window.confirm("Are you sure you want to cancel this booking?")) return;
 
-  if (loading) {
-    return <p className="text-center text-gray-600 mt-10">Loading bookings...</p>;
-  }
+    try {
+      await api.delete(`/bookings/teacher/cancel/${bookingId}`);
+      alert("Booking cancelled successfully!");
+      fetchBookings(); // Refresh the list
+    } catch (error) {
+      console.error("Error cancelling booking:", error);
+      alert("Failed to cancel booking.");
+    }
+  };
 
   return (
-    <div>
-      <Navbar />
-      <div className="p-6 max-w-4xl mx-auto bg-white rounded-xl shadow-md mt-6">
-        <h2 className="text-2xl font-semibold mb-4 text-gray-800">My Bookings</h2>
+    <div className="p-6 max-w-5xl mx-auto bg-white shadow-md rounded-xl">
+      <h2 className="text-2xl font-semibold mb-4">My Bookings</h2>
 
-        {/* --- Upcoming Sessions --- */}
-        <div className="mb-8">
-          <h3 className="text-xl font-semibold text-green-700 mb-3">
-            Upcoming Sessions
-          </h3>
-          {upcoming.length === 0 ? (
-            <p className="text-gray-500">No upcoming bookings.</p>
-          ) : (
-            <div className="space-y-3">
-              {upcoming.map((b) => (
-                <div
-                  key={b.id}
-                  className="border border-gray-200 p-4 rounded-lg flex justify-between items-center hover:bg-green-50 transition"
+      {loading ? (
+        <p>Loading bookings...</p>
+      ) : bookings.length === 0 ? (
+        <p className="text-gray-500">No bookings yet.</p>
+      ) : (
+        <table className="min-w-full border border-gray-200 rounded-lg">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="p-3 text-left">Student</th>
+              <th className="p-3 text-left">Email</th>
+              <th className="p-3 text-left">Date</th>
+              <th className="p-3 text-left">Time Slot</th>
+              <th className="p-3 text-left">Status</th>
+              <th className="p-3 text-left">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {bookings.map((b) => (
+              <tr key={b.id} className="border-t hover:bg-gray-50">
+                <td className="p-3">{b.studentName || "-"}</td>
+                <td className="p-3">{b.studentEmail || "-"}</td>
+                <td className="p-3">{b.date}</td>
+                <td className="p-3">{b.timeSlot}</td>
+                <td
+                  className={`p-3 font-medium ${
+                    b.status === "CONFIRMED"
+                      ? "text-green-600"
+                      : b.status === "CANCELLED" ||
+                        b.status === "CANCELLED_BY_TEACHER"
+                      ? "text-red-600"
+                      : "text-gray-500"
+                  }`}
                 >
-                  <div>
-                    <p className="font-medium text-gray-800">
-                      👩‍🎓 Student: {b.studentName || "N/A"}
-                    </p>
-                    <p className="text-sm text-gray-600">{b.studentEmail}</p>
-                    <p className="text-sm text-gray-600">
-                      📅 {b.date} | 🕒 {b.startTime} - {b.endTime}
-                    </p>
-                  </div>
-                  <span
-                    className={`px-3 py-1 text-sm font-semibold rounded-full ${
-                      b.status === "CONFIRMED"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-200 text-gray-700"
-                    }`}
-                  >
-                    {b.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* --- Past Sessions --- */}
-        <div>
-          <h3 className="text-xl font-semibold text-blue-700 mb-3">
-            Past Sessions
-          </h3>
-          {past.length === 0 ? (
-            <p className="text-gray-500">No past bookings yet.</p>
-          ) : (
-            <div className="space-y-3">
-              {past.map((b) => (
-                <div
-                  key={b.id}
-                  className="border border-gray-200 p-4 rounded-lg flex justify-between items-center hover:bg-blue-50 transition"
-                >
-                  <div>
-                    <p className="font-medium text-gray-800">
-                      👩‍🎓 Student: {b.studentName || "N/A"}
-                    </p>
-                    <p className="text-sm text-gray-600">{b.studentEmail}</p>
-                    <p className="text-sm text-gray-600">
-                      📅 {b.date} | 🕒 {b.startTime} - {b.endTime}
-                    </p>
-                  </div>
-                  <span
-                    className={`px-3 py-1 text-sm font-semibold rounded-full ${
-                      b.status === "CANCELLED"
-                        ? "bg-red-100 text-red-700"
-                        : "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    {b.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+                  {b.status.replaceAll("_", " ")}
+                </td>
+                <td className="p-3">
+                  {b.status === "CONFIRMED" ? (
+                    <button
+                      onClick={() => handleCancel(b.id)}
+                      className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                    >
+                      Cancel
+                    </button>
+                  ) : (
+                    <span className="text-gray-400">N/A</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 };
