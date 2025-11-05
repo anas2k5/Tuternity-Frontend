@@ -42,6 +42,19 @@ const ManageTeacherAvailability = () => {
     }
   };
 
+  const handleDeleteAvailability = async (id) => {
+    if (!window.confirm("Are you sure you want to remove this slot?")) return;
+
+    try {
+      await api.delete(`${API_URL}/${id}`);
+      alert("Slot removed successfully!");
+      fetchSlots();
+    } catch (error) {
+      console.error("Error deleting slot:", error);
+      alert("Failed to remove slot!");
+    }
+  };
+
   return (
     <div className="p-6 max-w-2xl mx-auto bg-white shadow-md rounded-xl">
       <h2 className="text-2xl font-semibold mb-4">Manage Availability</h2>
@@ -95,8 +108,19 @@ const ManageTeacherAvailability = () => {
         ) : (
           <ul className="divide-y divide-gray-200">
             {slots.map((slot) => (
-              <li key={slot.id} className="py-2">
-                📅 {slot.date} — 🕒 {slot.startTime} to {slot.endTime}
+              <li
+                key={slot.id}
+                className="py-2 flex justify-between items-center"
+              >
+                <span>
+                  📅 {slot.date} — 🕒 {slot.startTime} to {slot.endTime}
+                </span>
+                <button
+                  onClick={() => handleDeleteAvailability(slot.id)}
+                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-all"
+                >
+                  Remove
+                </button>
               </li>
             ))}
           </ul>
