@@ -16,6 +16,9 @@ import TeacherDetails from "./pages/TeacherDetails";
 import ManageTeacherProfile from "./pages/ManageTeacherProfile";
 import ManageTeacherAvailability from "./pages/ManageTeacherAvailability";
 import TeacherBookings from "./pages/TeacherBookings"; // ✅ NEW IMPORT
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentCancel from "./pages/PaymentCancel";
+
 
 function App() {
   return (
@@ -110,6 +113,9 @@ function App() {
 
             {/* Misc */}
             <Route path="/not-authorized" element={<NotAuthorized />} />
+           <Route path="/paymentSuccess" element={<PaymentSuccess />} />
+
+             <Route path="/paymentCancel" element={<PaymentCancel />} />
           </Routes>
         </div>
       </AuthProvider>
