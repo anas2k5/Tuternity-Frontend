@@ -2,15 +2,16 @@ import { useEffect, useState } from "react";
 import api from "../api";
 import Navbar from "../components/Navbar";
 import { getJSON } from "../utils/storage";
+import toast from "react-hot-toast";
 
 export default function StudentBookings() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [processingPaymentId, setProcessingPaymentId] = useState(null); // 💳 To track payment button state
+  const [processingPaymentId, setProcessingPaymentId] = useState(null);
 
   // 🔹 Fetch all student bookings
-  const fetchBookings = () => {
+  const fetchBookings = async () => {
     setLoading(true);
     setError("");
     const profile = getJSON("profile");
@@ -22,11 +23,14 @@ export default function StudentBookings() {
       return;
     }
 
-    api
-      .get(`/bookings/student/${studentId}`)
-      .then((res) => setBookings(res.data || []))
-      .catch(() => setError("Failed to load bookings. Try again later."))
-      .finally(() => setLoading(false));
+    try {
+      const res = await api.get(`/bookings/student/${studentId}`);
+      setBookings(res.data || []);
+    } catch {
+      setError("Failed to load bookings. Try again later.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -36,12 +40,16 @@ export default function StudentBookings() {
   // 🔹 Cancel booking
   const handleCancel = async (bookingId) => {
     if (!window.confirm("Are you sure you want to cancel this booking?")) return;
+
     try {
       await api.delete(`/bookings/${bookingId}`);
-      alert("Booking has been successfully cancelled.");
+      toast.success("Booking has been successfully cancelled.");
       fetchBookings();
     } catch (err) {
-      alert("Cancellation failed: " + (err.response?.data?.message || "Server error."));
+      toast.error(
+        "Cancellation failed: " +
+          (err.response?.data?.message || "Server error.")
+      );
     }
   };
 
@@ -52,13 +60,17 @@ export default function StudentBookings() {
       const response = await api.post(`/stripe/create-checkout-session/${bookingId}`);
       const { url } = response.data;
       if (url) {
+        toast("Redirecting to Stripe Checkout...", { icon: "💳" });
         window.location.href = url; // Redirect to Stripe checkout
       } else {
-        alert("Could not initiate payment. Please try again.");
+        toast.error("Could not initiate payment. Please try again.");
       }
     } catch (error) {
       console.error("Payment Error:", error);
-      alert("Failed to start payment. Try again later.");
+      toast.error(
+        error.response?.data?.error ||
+          "Failed to start payment. Make sure this booking isn’t already paid."
+      );
     } finally {
       setProcessingPaymentId(null);
     }
@@ -94,21 +106,22 @@ export default function StudentBookings() {
                 </div>
 
                 <div className="flex items-center space-x-3">
+                  {/* 🔹 Booking Status Badge */}
                   <span
                     className={`px-3 py-1 rounded text-sm font-medium ${
                       b.status === "PAID"
                         ? "bg-green-600 text-white"
                         : b.status === "PENDING"
                         ? "bg-yellow-500 text-white"
-                        : b.status === "CONFIRMED"
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-500 text-white"
+                        : b.status?.includes("CANCELLED")
+                        ? "bg-gray-500 text-white"
+                        : "bg-blue-500 text-white"
                     }`}
                   >
                     {b.status || "UNKNOWN"}
                   </span>
 
-                  {/* 💳 Payment Button */}
+                  {/* 💳 Pay Now (only if PENDING) */}
                   {b.status === "PENDING" && (
                     <button
                       onClick={() => handlePayment(b.id)}
@@ -123,8 +136,8 @@ export default function StudentBookings() {
                     </button>
                   )}
 
-                  {/* ❌ Cancel Button */}
-                  {b.status === "CONFIRMED" && (
+                  {/* ❌ Cancel (only if not PAID or CANCELLED) */}
+                  {b.status !== "PAID" && !b.status?.includes("CANCELLED") && (
                     <button
                       onClick={() => handleCancel(b.id)}
                       className="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700 transition"

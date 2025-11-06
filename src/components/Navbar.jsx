@@ -7,21 +7,74 @@ export default function Navbar() {
 
   return (
     <nav className="bg-blue-600 text-white p-4 flex justify-between items-center">
-      <div className="flex items-center gap-4">
-        <Link to="/" className="font-bold text-lg">Tuternity</Link>
-        {user?.role === "TEACHER" && <Link to="/teacher">Dashboard</Link>}
-        {user?.role === "STUDENT" && <Link to="/student">Dashboard</Link>}
-        {user?.role === "ADMIN" && <Link to="/admin">Admin</Link>}
+      {/* Left side - Logo and navigation links */}
+      <div className="flex items-center gap-5">
+        <Link to="/" className="font-bold text-lg hover:underline">
+          Tuternity
+        </Link>
+
+        {/* 🧑‍🏫 Teacher Links */}
+        {user?.role === "TEACHER" && (
+          <>
+            <Link to="/teacher" className="hover:underline">
+              Dashboard
+            </Link>
+            <Link to="/teacher/bookings" className="hover:underline">
+              My Bookings
+            </Link>
+            <Link to="/teacher/profile" className="hover:underline">
+              Profile
+            </Link>
+            <Link to="/teacher/availability" className="hover:underline">
+              Availability
+            </Link>
+          </>
+        )}
+
+        {/* 🎓 Student Links */}
+        {user?.role === "STUDENT" && (
+          <>
+            <Link to="/student" className="hover:underline">
+              Dashboard
+            </Link>
+            <Link to="/student/teachers" className="hover:underline">
+              Browse Teachers
+            </Link>
+            <Link to="/student/bookings" className="hover:underline">
+              My Bookings
+            </Link>
+            <Link to="/student/payments" className="hover:underline">
+              Payment History
+            </Link>
+          </>
+        )}
+
+        {/* 🛡️ Admin Links */}
+        {user?.role === "ADMIN" && (
+          <Link to="/admin" className="hover:underline">
+            Admin Dashboard
+          </Link>
+        )}
       </div>
 
+      {/* Right side - Role badge and Logout */}
       <div className="flex items-center gap-3">
         {user ? (
           <>
-            <span className="text-sm px-2 py-1 rounded bg-blue-700/30">{user.role}</span>
-            <button onClick={logout} className="bg-red-500 px-3 py-1 rounded">Logout</button>
+            <span className="text-sm px-3 py-1 rounded bg-blue-700/30 font-semibold uppercase">
+              {user.role}
+            </span>
+            <button
+              onClick={logout}
+              className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded"
+            >
+              Logout
+            </button>
           </>
         ) : (
-          <Link to="/" className="text-sm">Login</Link>
+          <Link to="/login" className="text-sm hover:underline">
+            Login
+          </Link>
         )}
       </div>
     </nav>

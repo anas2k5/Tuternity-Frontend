@@ -2,6 +2,7 @@ import "./App.css";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import AuthProvider from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { Toaster } from "react-hot-toast"; // ✅ Toast support added
 
 // Pages
 import Login from "./pages/Login";
@@ -15,9 +16,10 @@ import StudentBookings from "./pages/StudentBookings";
 import TeacherDetails from "./pages/TeacherDetails";
 import ManageTeacherProfile from "./pages/ManageTeacherProfile";
 import ManageTeacherAvailability from "./pages/ManageTeacherAvailability";
-import TeacherBookings from "./pages/TeacherBookings"; // ✅ NEW IMPORT
+import TeacherBookings from "./pages/TeacherBookings";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
+import StudentPayments from "./pages/StudentPayments";
 
 
 function App() {
@@ -25,6 +27,9 @@ function App() {
     <Router>
       <AuthProvider>
         <div className="min-h-screen bg-gray-100">
+          {/* ✅ Toast Notification Container */}
+          <Toaster position="top-center" reverseOrder={false} />
+
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Login />} />
@@ -113,9 +118,19 @@ function App() {
 
             {/* Misc */}
             <Route path="/not-authorized" element={<NotAuthorized />} />
-           <Route path="/paymentSuccess" element={<PaymentSuccess />} />
 
-             <Route path="/paymentCancel" element={<PaymentCancel />} />
+            {/* ✅ Payment Success & Cancel */}
+            <Route path="/paymentSuccess" element={<PaymentSuccess />} />
+            <Route path="/paymentCancel" element={<PaymentCancel />} />
+                <Route
+  path="/student/payments"
+  element={
+    <ProtectedRoute role="STUDENT">
+      <StudentPayments />
+    </ProtectedRoute>
+  }
+/>
+
           </Routes>
         </div>
       </AuthProvider>

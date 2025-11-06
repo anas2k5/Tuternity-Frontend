@@ -7,15 +7,14 @@ export default function BrowseTeachers() {
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [openSlots, setOpenSlots] = useState(null); // only one open at a time
+  const [slots, setSlots] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchTeachers = async () => {
       try {
-        // ✅ Correct endpoint — matches backend public route
         const res = await api.get("/teachers");
-
-        console.log("✅ Teachers fetched:", res.data);
         setTeachers(res.data);
       } catch (err) {
         console.error("❌ Failed to fetch teachers:", err);
@@ -26,6 +25,41 @@ export default function BrowseTeachers() {
     };
     fetchTeachers();
   }, []);
+
+  const toggleSlots = async (teacherId) => {
+    if (openSlots === teacherId) {
+      setOpenSlots(null);
+      return;
+    }
+
+    setOpenSlots(teacherId);
+
+    if (!slots[teacherId]) {
+      try {
+        const res = await api.get(`/availability/teacher/${teacherId}`);
+        setSlots((prev) => ({ ...prev, [teacherId]: res.data }));
+      } catch (err) {
+        console.error("❌ Failed to load availability:", err);
+      }
+    }
+  };
+
+  const handleBook = async (teacherId, slotId) => {
+    try {
+      await api.post("/bookings", {
+        teacherId,
+        availabilityId: slotId,
+      });
+      alert("✅ Booking confirmed!");
+      navigate("/student/bookings");
+    } catch (err) {
+      console.error("❌ Booking failed:", err);
+      alert(
+        err.response?.data?.message ||
+          "Booking failed. Please try again later."
+      );
+    }
+  };
 
   if (loading)
     return (
@@ -48,40 +82,89 @@ export default function BrowseTeachers() {
         {teachers.length === 0 ? (
           <p className="text-gray-600">No teachers found.</p>
         ) : (
-          <div className="grid md:grid-cols-3 sm:grid-cols-2 gap-6">
+          <div className="flex flex-col gap-5">
             {teachers.map((t) => (
               <div
                 key={t.id}
-                className="border rounded-lg shadow-md bg-white p-4 flex flex-col justify-between hover:shadow-lg transition-all"
+                className="border rounded-lg shadow bg-white p-5 hover:shadow-lg transition-all"
               >
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-800">
-                    {t.user?.name || "Unnamed Teacher"}
-                  </h2>
-                  <p className="text-gray-600 mt-1">
-                    Subject: {t.subject || "Not specified"}
-                  </p>
-                  <p className="text-gray-600">
-                    Skills: {t.skills || "Not specified"}
-                  </p>
-                  <p className="text-gray-600">
-                    Experience: {t.experienceYears || 0} years
-                  </p>
-                  <p className="text-gray-600">
-                    Hourly Rate: ₹{t.hourlyRate || 0}/hr
-                  </p>
-                  <p className="text-gray-600 mt-1">City: {t.city || "N/A"}</p>
+                {/* Teacher Info */}
+                <div className="flex justify-between items-start flex-wrap gap-3">
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-800">
+                      {t.user?.name || "Unnamed Teacher"}
+                    </h2>
+                    <p className="text-gray-600">
+                      Subject: {t.subject || "Not specified"}
+                    </p>
+                    <p className="text-gray-600">
+                      Skills: {t.skills || "Not specified"}
+                    </p>
+                    <p className="text-gray-600">
+                      Experience: {t.experienceYears || 0} years
+                    </p>
+                    <p className="text-gray-600">
+                      Hourly Rate: ₹{t.hourlyRate || 0}/hr
+                    </p>
+                    <p className="text-gray-600">City: {t.city || "N/A"}</p>
+                  </div>
+
+                  <button
+                    onClick={() => toggleSlots(t.id)}
+                    className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
+                  >
+                    {openSlots === t.id ? "Hide Slots" : "Show Slots"}
+                  </button>
                 </div>
 
-                <button
-                  onClick={() => {
-                    console.log("Navigating to teacher:", t.id);
-                    navigate(`/teacher/${t.id}`);
-                  }}
-                  className="mt-4 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
-                >
-                  View Details
-                </button>
+                {/* Slots Section (Collapsible below card) */}
+                {openSlots === t.id && (
+                  <div className="mt-4 border-t pt-3 bg-gray-50 rounded p-3 animate-fade-in">
+                    {slots[t.id] && slots[t.id].length > 0 ? (
+                      <div className="flex flex-col gap-2">
+                        {slots[t.id].map((s) => (
+                          <div
+                            key={s.id}
+                            className={`flex justify-between items-center border rounded p-2 ${
+                              s.booked ? "bg-gray-200" : "bg-green-50"
+                            }`}
+                          >
+                            <div>
+                              <p className="text-gray-700 font-medium">
+                                {s.date} | {s.startTime} - {s.endTime}
+                              </p>
+                              <span
+                                className={`text-xs px-2 py-1 rounded ${
+                                  s.booked
+                                    ? "bg-gray-400 text-white"
+                                    : "bg-green-100 text-green-700"
+                                }`}
+                              >
+                                {s.booked ? "Booked" : "Available"}
+                              </span>
+                            </div>
+
+                            <button
+                              onClick={() => handleBook(t.id, s.id)}
+                              disabled={s.booked}
+                              className={`px-3 py-1 rounded text-white text-sm font-medium ${
+                                s.booked
+                                  ? "bg-gray-400 cursor-not-allowed"
+                                  : "bg-green-600 hover:bg-green-700"
+                              }`}
+                            >
+                              {s.booked ? "Booked" : "Book Now"}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-600 text-sm">
+                        No available slots.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>

@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import toast from "react-hot-toast";
 import axios from "axios";
 
 const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const bookingId = searchParams.get("bookingId");
   const [status, setStatus] = useState("loading");
   const [response, setResponse] = useState(null);
@@ -17,52 +19,60 @@ const PaymentSuccess = () => {
         console.log("✅ Payment verified:", res.data);
         setResponse(res.data);
         setStatus("success");
+        toast.success("Payment Successful! 🎉");
+
+        // Redirect after 3 seconds
+        setTimeout(() => navigate("/student/bookings"), 3000);
       } catch (err) {
         console.error("❌ Verification failed:", err);
         setStatus("error");
+        toast.error("Payment verification failed. Please check again.");
       }
     };
 
     if (bookingId) verifyPayment();
-    else setStatus("invalid");
-  }, [bookingId]);
+    else {
+      setStatus("invalid");
+      toast.error("Invalid or missing booking ID.");
+      setTimeout(() => navigate("/student/bookings"), 3000);
+    }
+  }, [bookingId, navigate]);
 
-  if (status === "loading")
+  if (status === "loading") {
     return (
       <div style={styles.container}>
         <h2>⏳ Verifying your payment...</h2>
       </div>
     );
+  }
 
-  if (status === "error" || status === "invalid")
+  if (status === "error" || status === "invalid") {
     return (
       <div style={styles.container}>
         <h1 style={{ color: "red" }}>❌ Payment Verification Failed</h1>
-        <p>Something went wrong. Please try again later.</p>
+        <p>Something went wrong. Redirecting you shortly...</p>
       </div>
     );
+  }
 
   return (
     <div style={styles.container}>
       <h1 style={{ color: "green" }}>✅ Payment Successful!</h1>
-      <p>{response.message}</p>
+      <p>{response?.message || "Your payment has been verified."}</p>
       <div style={styles.card}>
         <p>
-          <strong>Booking ID:</strong> {response.bookingId}
+          <strong>Booking ID:</strong> {response?.bookingId}
         </p>
         <p>
-          <strong>Payment Status:</strong> {response.paymentStatus}
+          <strong>Payment Status:</strong> {response?.paymentStatus}
         </p>
         <p>
-          <strong>Booking Status:</strong> {response.bookingStatus}
+          <strong>Booking Status:</strong> {response?.bookingStatus}
         </p>
       </div>
-     <button
-  style={styles.button}
-  onClick={() => (window.location.href = "/student")}
->
-  Go to Dashboard
-</button>
+      <p style={{ marginTop: "15px", color: "#4b5563" }}>
+        Redirecting to your bookings page...
+      </p>
     </div>
   );
 };
@@ -84,15 +94,6 @@ const styles = {
     borderRadius: "10px",
     boxShadow: "0px 2px 10px rgba(0,0,0,0.1)",
     marginTop: "20px",
-  },
-  button: {
-    marginTop: "20px",
-    padding: "10px 20px",
-    borderRadius: "6px",
-    backgroundColor: "#16a34a",
-    color: "#fff",
-    border: "none",
-    cursor: "pointer",
   },
 };
 
