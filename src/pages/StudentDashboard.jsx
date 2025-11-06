@@ -7,13 +7,26 @@ import toast from "react-hot-toast";
 
 export default function StudentDashboard() {
   const [latestBooking, setLatestBooking] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // ✅ Fetch student profile
+  const fetchProfile = async () => {
+    try {
+      const res = await api.get("/students/me");
+      setProfile(res.data);
+    } catch (error) {
+      console.error("❌ Failed to fetch student profile:", error);
+      toast.error("Failed to load student profile.");
+    }
+  };
+
+  // ✅ Fetch latest booking
   const fetchLatestBooking = async () => {
     try {
-      const profile = getJSON("profile");
-      const studentId = profile?.id;
+      const localProfile = getJSON("profile");
+      const studentId = localProfile?.id;
       if (!studentId) {
         setLoading(false);
         return;
@@ -29,6 +42,7 @@ export default function StudentDashboard() {
         setLatestBooking(sorted[0]);
       }
     } catch (error) {
+      console.error("❌ Failed to fetch latest booking:", error);
       toast.error("Failed to fetch latest booking.");
     } finally {
       setLoading(false);
@@ -36,15 +50,33 @@ export default function StudentDashboard() {
   };
 
   useEffect(() => {
+    fetchProfile();
     fetchLatestBooking();
   }, []);
 
   return (
     <div className="min-h-screen bg-gray-100">
       <Navbar />
-      <div className="p-8 max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">🎓 Welcome to Your Dashboard</h1>
+      <div className="p-8 max-w-5xl mx-auto">
+        {/* ✅ Student Welcome Section */}
+        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+            🎓 Welcome, {profile?.user?.name || "Student"}!
+          </h1>
+          <p className="text-gray-600 text-sm">
+            {profile?.educationLevel
+              ? `${profile.educationLevel} • `
+              : ""}
+            {profile?.city || ""}
+          </p>
+          <p className="text-gray-600 mt-1">
+            {profile?.interests
+              ? `Interests: ${profile.interests}`
+              : ""}
+          </p>
+        </div>
 
+        {/* ✅ Latest Booking Section */}
         {loading ? (
           <p>Loading your latest booking...</p>
         ) : latestBooking ? (
@@ -81,12 +113,18 @@ export default function StudentDashboard() {
               </span>
             </div>
 
-            <div className="mt-4">
+            <div className="mt-4 flex gap-3">
               <button
                 onClick={() => navigate("/student/bookings")}
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
               >
                 View All Bookings
+              </button>
+              <button
+                onClick={() => navigate("/student/teachers")}
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+              >
+                Find More Tutors
               </button>
             </div>
           </div>
@@ -101,6 +139,16 @@ export default function StudentDashboard() {
             </button>
           </div>
         )}
+
+        {/* ✅ Profile Shortcut */}
+        <div className="text-center mt-8">
+          <button
+            onClick={() => navigate("/student/profile")}
+            className="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition"
+          >
+            View / Edit My Profile
+          </button>
+        </div>
       </div>
     </div>
   );

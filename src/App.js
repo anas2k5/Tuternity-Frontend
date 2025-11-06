@@ -2,16 +2,16 @@ import "./App.css";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import AuthProvider from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
-import { Toaster } from "react-hot-toast"; // ✅ Toast support added
+import { Toaster } from "react-hot-toast";
 
-// Pages
+// ✅ Pages
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import StudentDashboard from "./pages/StudentDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotAuthorized from "./pages/NotAuthorized";
-import BrowseTeachers from "./pages/BrowseTeachers";
+import BrowseTeachers from "./pages/BrowseTeachers"; // aka Find Tutors
 import StudentBookings from "./pages/StudentBookings";
 import TeacherDetails from "./pages/TeacherDetails";
 import ManageTeacherProfile from "./pages/ManageTeacherProfile";
@@ -20,6 +20,7 @@ import TeacherBookings from "./pages/TeacherBookings";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
 import StudentPayments from "./pages/StudentPayments";
+import StudentProfile from "./pages/StudentProfile";
 
 
 function App() {
@@ -27,16 +28,36 @@ function App() {
     <Router>
       <AuthProvider>
         <div className="min-h-screen bg-gray-100">
-          {/* ✅ Toast Notification Container */}
-          <Toaster position="top-center" reverseOrder={false} />
+          {/* ✅ Global Toast Notification */}
+          <Toaster
+            position="top-center"
+            toastOptions={{
+              duration: 2500,
+              style: {
+                background: "#333",
+                color: "#fff",
+                borderRadius: "10px",
+                fontSize: "14px",
+              },
+              success: {
+                style: { background: "#16a34a" },
+              },
+              error: {
+                style: { background: "#dc2626" },
+              },
+              loading: {
+                style: { background: "#2563eb" },
+              },
+            }}
+          />
 
           <Routes>
-            {/* Public Routes */}
+            {/* ---------------- PUBLIC ROUTES ---------------- */}
             <Route path="/" element={<Login />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
-            {/* Teacher Routes */}
+            {/* ---------------- TEACHER ROUTES ---------------- */}
             <Route
               path="/teacher"
               element={
@@ -70,7 +91,7 @@ function App() {
               }
             />
 
-            {/* Student Routes */}
+            {/* ---------------- STUDENT ROUTES ---------------- */}
             <Route
               path="/student"
               element={
@@ -80,7 +101,7 @@ function App() {
               }
             />
             <Route
-              path="/student/teachers"
+              path="/student/find-tutors"
               element={
                 <ProtectedRoute role="STUDENT">
                   <BrowseTeachers />
@@ -95,8 +116,16 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/student/payments"
+              element={
+                <ProtectedRoute role="STUDENT">
+                  <StudentPayments />
+                </ProtectedRoute>
+              }
+            />
 
-            {/* Teacher details (viewable by students) */}
+            {/* ---------------- TEACHER DETAILS (VIEWABLE BY STUDENTS) ---------------- */}
             <Route
               path="/teacher/:id"
               element={
@@ -106,7 +135,7 @@ function App() {
               }
             />
 
-            {/* Admin Routes */}
+            {/* ---------------- ADMIN ROUTES ---------------- */}
             <Route
               path="/admin"
               element={
@@ -116,17 +145,17 @@ function App() {
               }
             />
 
-            {/* Misc */}
+            {/* ---------------- OTHER ROUTES ---------------- */}
             <Route path="/not-authorized" element={<NotAuthorized />} />
 
-            {/* ✅ Payment Success & Cancel */}
+            {/* ✅ Payment Redirect Routes */}
             <Route path="/paymentSuccess" element={<PaymentSuccess />} />
             <Route path="/paymentCancel" element={<PaymentCancel />} />
-                <Route
-  path="/student/payments"
+            <Route
+  path="/student/profile"
   element={
     <ProtectedRoute role="STUDENT">
-      <StudentPayments />
+      <StudentProfile />
     </ProtectedRoute>
   }
 />

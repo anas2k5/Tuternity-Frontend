@@ -1,81 +1,99 @@
-import React, { useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { getJSON } from "../utils/storage";
 
 export default function Navbar() {
-  const { user, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const profile = getJSON("profile");
+  const role = profile?.role || profile?.user?.role || "STUDENT"; // fallback
+  const isTeacher = role.toUpperCase() === "TEACHER";
+
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/login");
+  };
 
   return (
-    <nav className="bg-blue-600 text-white p-4 flex justify-between items-center">
-      {/* Left side - Logo and navigation links */}
-      <div className="flex items-center gap-5">
-        <Link to="/" className="font-bold text-lg hover:underline">
+    <nav className="bg-blue-600 text-white shadow-md">
+      <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+        {/* Left Section - Logo */}
+        <Link
+          to="/"
+          className="text-2xl font-bold tracking-tight hover:text-gray-200 transition"
+        >
           Tuternity
         </Link>
 
-        {/* 🧑‍🏫 Teacher Links */}
-        {user?.role === "TEACHER" && (
-          <>
-            <Link to="/teacher" className="hover:underline">
-              Dashboard
-            </Link>
-            <Link to="/teacher/bookings" className="hover:underline">
-              My Bookings
-            </Link>
-            <Link to="/teacher/profile" className="hover:underline">
-              Profile
-            </Link>
-            <Link to="/teacher/availability" className="hover:underline">
-              Availability
-            </Link>
-          </>
-        )}
+        {/* Middle Section - Navigation Links */}
+        <div className="flex items-center space-x-6 font-medium">
+          {isTeacher ? (
+            <>
+              <Link
+                to="/teacher"
+                className="hover:text-gray-200 transition duration-200"
+              >
+                Dashboard
+              </Link>
+              <Link
+                to="/teacher/bookings"
+                className="hover:text-gray-200 transition duration-200"
+              >
+                My Bookings
+              </Link>
+              <Link
+                to="/teacher/profile"
+                className="hover:text-gray-200 transition duration-200"
+              >
+                Profile
+              </Link>
+              <Link
+                to="/teacher/availability"
+                className="hover:text-gray-200 transition duration-200"
+              >
+                Availability
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/student"
+                className="hover:text-gray-200 transition duration-200"
+              >
+                Dashboard
+              </Link>
+              <Link
+                to="/student/bookings"
+                className="hover:text-gray-200 transition duration-200"
+              >
+                My Bookings
+              </Link>
+              <Link
+                to="/student/find-tutors"
+                className="hover:text-gray-200 transition duration-200"
+              >
+                Find Tutors
+              </Link>
+              <Link
+                to="/student/profile"
+                className="hover:text-gray-200 transition duration-200"
+              >
+                Profile
+              </Link>
+            </>
+          )}
+        </div>
 
-        {/* 🎓 Student Links */}
-        {user?.role === "STUDENT" && (
-          <>
-            <Link to="/student" className="hover:underline">
-              Dashboard
-            </Link>
-            <Link to="/student/teachers" className="hover:underline">
-              Browse Teachers
-            </Link>
-            <Link to="/student/bookings" className="hover:underline">
-              My Bookings
-            </Link>
-            <Link to="/student/payments" className="hover:underline">
-              Payment History
-            </Link>
-          </>
-        )}
-
-        {/* 🛡️ Admin Links */}
-        {user?.role === "ADMIN" && (
-          <Link to="/admin" className="hover:underline">
-            Admin Dashboard
-          </Link>
-        )}
-      </div>
-
-      {/* Right side - Role badge and Logout */}
-      <div className="flex items-center gap-3">
-        {user ? (
-          <>
-            <span className="text-sm px-3 py-1 rounded bg-blue-700/30 font-semibold uppercase">
-              {user.role}
-            </span>
-            <button
-              onClick={logout}
-              className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded"
-            >
-              Logout
-            </button>
-          </>
-        ) : (
-          <Link to="/login" className="text-sm hover:underline">
-            Login
-          </Link>
-        )}
+        {/* Right Section - Role Badge + Logout */}
+        <div className="flex items-center space-x-3">
+          <span className="bg-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
+            {isTeacher ? "TEACHER" : "STUDENT"}
+          </span>
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 hover:bg-red-600 px-4 py-1 rounded-md font-medium transition"
+          >
+            Logout
+          </button>
+        </div>
       </div>
     </nav>
   );

@@ -1,8 +1,7 @@
-// api.js
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:8081/api",
+  baseURL: "http://localhost:8081/api", // ✅ backend is running at 8081
 });
 
 api.interceptors.request.use((config) => {

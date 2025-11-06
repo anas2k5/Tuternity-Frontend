@@ -14,20 +14,23 @@ export default function StudentBookings() {
   const fetchBookings = async () => {
     setLoading(true);
     setError("");
-    const profile = getJSON("profile");
-    const studentId = profile?.id;
-
-    if (!studentId) {
-      setBookings([]);
-      setLoading(false);
-      return;
-    }
 
     try {
+      const profile = getJSON("profile");
+      const studentId = profile?.id;
+
+      if (!studentId) {
+        setBookings([]);
+        setLoading(false);
+        return;
+      }
+
       const res = await api.get(`/bookings/student/${studentId}`);
       setBookings(res.data || []);
-    } catch {
+    } catch (err) {
+      console.error("❌ Failed to load bookings:", err);
       setError("Failed to load bookings. Try again later.");
+      toast.error("Unable to load bookings. Please refresh.");
     } finally {
       setLoading(false);
     }
@@ -43,12 +46,13 @@ export default function StudentBookings() {
 
     try {
       await api.delete(`/bookings/${bookingId}`);
-      toast.success("Booking has been successfully cancelled.");
+      toast.success("Booking cancelled successfully.");
       fetchBookings();
     } catch (err) {
+      console.error("❌ Cancellation failed:", err);
       toast.error(
-        "Cancellation failed: " +
-          (err.response?.data?.message || "Server error.")
+        err.response?.data?.message ||
+          "Failed to cancel booking. Please try again."
       );
     }
   };
@@ -57,19 +61,25 @@ export default function StudentBookings() {
   const handlePayment = async (bookingId) => {
     setProcessingPaymentId(bookingId);
     try {
-      const response = await api.post(`/stripe/create-checkout-session/${bookingId}`);
+      const response = await api.post(
+        `/stripe/create-checkout-session/${bookingId}`
+      );
       const { url } = response.data;
+
       if (url) {
-        toast("Redirecting to Stripe Checkout...", { icon: "💳" });
-        window.location.href = url; // Redirect to Stripe checkout
+        toast("Redirecting to Stripe Checkout...", {
+          icon: "💳",
+          duration: 2000,
+        });
+        window.location.href = url;
       } else {
         toast.error("Could not initiate payment. Please try again.");
       }
     } catch (error) {
-      console.error("Payment Error:", error);
+      console.error("❌ Payment Error:", error);
       toast.error(
         error.response?.data?.error ||
-          "Failed to start payment. Make sure this booking isn’t already paid."
+          "Payment failed. This booking might already be paid."
       );
     } finally {
       setProcessingPaymentId(null);
@@ -94,10 +104,12 @@ export default function StudentBookings() {
             {bookings.map((b, i) => (
               <div
                 key={b.id || i}
-                className="p-4 border rounded shadow flex justify-between items-center bg-white"
+                className="p-4 border rounded shadow flex justify-between items-center bg-white hover:shadow-md transition-all"
               >
                 <div>
-                  <h2 className="font-semibold text-lg">{b.teacherName || "Teacher"}</h2>
+                  <h2 className="font-semibold text-lg">
+                    {b.teacherName || "Teacher"}
+                  </h2>
                   <p>Subject: {b.subject || "-"}</p>
                   <p>Skills: {b.skills || "-"}</p>
                   <p>
@@ -126,13 +138,15 @@ export default function StudentBookings() {
                     <button
                       onClick={() => handlePayment(b.id)}
                       disabled={processingPaymentId === b.id}
-                      className={`px-3 py-1 rounded transition text-white ${
+                      className={`px-3 py-1 rounded text-white font-medium transition ${
                         processingPaymentId === b.id
                           ? "bg-gray-400 cursor-not-allowed"
                           : "bg-green-600 hover:bg-green-700"
                       }`}
                     >
-                      {processingPaymentId === b.id ? "Processing..." : "💳 Pay Now"}
+                      {processingPaymentId === b.id
+                        ? "Processing..."
+                        : "💳 Pay Now"}
                     </button>
                   )}
 

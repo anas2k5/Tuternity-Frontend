@@ -1,249 +1,168 @@
-import React, { useState, useEffect, useContext } from "react";
-import Navbar from "../components/Navbar";
+import { useEffect, useState } from "react";
 import api from "../api";
-import { AuthContext } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar";
+import toast from "react-hot-toast";
 
 export default function ManageTeacherProfile() {
-  const { user } = useContext(AuthContext || {}); // safe fallback
-  const navigate = useNavigate();
-
-  const [profileData, setProfileData] = useState({
-    name: user?.name || "",
+  const [profile, setProfile] = useState({
     subject: "",
     skills: "",
-    experienceYears: 0,
-    hourlyRate: 0,
-    bio: "",
+    experienceYears: "",
+    hourlyRate: "",
     city: "",
-    available: false,
+    bio: "",
   });
-
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
 
+  // ✅ Fetch teacher's own profile
   useEffect(() => {
     const fetchProfile = async () => {
-      setLoading(true);
-      setError("");
       try {
-        // GET the teacher's profile (your backend exposes /api/teachers/me)
         const res = await api.get("/teachers/me");
-        const data = res.data || {};
-
-        setProfileData({
-          name: data.user?.name || user?.name || "",
-          subject: data.subject || "",
-          skills: data.skills || "",
-          experienceYears: data.experienceYears ?? 0,
-          hourlyRate: data.hourlyRate ?? 0,
-          bio: data.bio || "",
-          city: data.city || "",
-          available: data.available ?? false,
-        });
+        setProfile(res.data || {});
       } catch (err) {
-        console.error("Failed to fetch profile:", err);
-        // If unauthorized, redirect to login
-        if (err?.response?.status === 401 || err?.response?.status === 403) {
-          setError("Unauthorized. Please log in.");
-          navigate("/login");
-          return;
-        }
-        setError("Failed to load profile data.");
+        console.error("❌ Failed to fetch teacher profile:", err);
+        toast.error("Failed to load profile. Please try again later.");
       } finally {
         setLoading(false);
       }
     };
-
     fetchProfile();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // run once
+  }, []);
 
+  // ✅ Handle input changes
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setProfileData((prev) => ({
-      ...prev,
-      [name]:
-        type === "checkbox"
-          ? checked
-          : name === "experienceYears"
-          ? parseInt(value || 0, 10)
-          : name === "hourlyRate"
-          ? parseFloat(value || 0)
-          : value,
-    }));
+    const { name, value } = e.target;
+    setProfile((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  // ✅ Save changes to backend
+  const handleSave = async (e) => {
     e.preventDefault();
-    setSaving(true);
-    setError("");
-    setMessage("");
-
     try {
-      // PUT to update teacher profile (backend expects TeacherProfileRequest shape)
-      await api.put("/teachers/me", {
-        name: profileData.name,
-        subject: profileData.subject,
-        skills: profileData.skills,
-        experienceYears: profileData.experienceYears,
-        hourlyRate: profileData.hourlyRate,
-        bio: profileData.bio,
-        city: profileData.city,
-        available: profileData.available,
-      });
-
-      setMessage("Profile updated successfully!");
+      setSaving(true);
+      const res = await api.put("/teachers/me", profile);
+      setProfile(res.data);
+      toast.success("✅ Profile updated successfully!");
     } catch (err) {
-      console.error("Update failed:", err);
-      if (err?.response?.status === 401 || err?.response?.status === 403) {
-        setError("Unauthorized. Please log in.");
-        navigate("/login");
-      } else {
-        setError(err?.response?.data?.message || "Failed to save profile.");
-      }
+      console.error("❌ Update failed:", err);
+      toast.error("Failed to update profile.");
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) {
+  if (loading)
     return (
       <div>
         <Navbar />
-        <div className="p-6 text-gray-600">Loading profile...</div>
+        <div className="p-6 text-gray-700">Loading profile...</div>
       </div>
     );
-  }
 
   return (
-    <div>
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <div className="p-6 max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Manage Profile</h1>
+      <div className="p-8 max-w-3xl mx-auto">
+        <h1 className="text-3xl font-bold mb-6 text-gray-800">
+          👨‍🏫 Manage Your Teaching Profile
+        </h1>
 
-        {message && (
-          <p className="bg-green-100 text-green-700 p-3 rounded mb-4">{message}</p>
-        )}
-        {error && (
-          <p className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</p>
-        )}
-
-        <form onSubmit={handleSubmit} className="bg-white p-6 shadow-lg rounded-xl">
-          <h2 className="text-xl font-semibold mb-4 border-b pb-2">User Details</h2>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">Name</label>
+        <form
+          onSubmit={handleSave}
+          className="bg-white shadow-md rounded-xl p-6 space-y-4"
+        >
+          {/* Subject */}
+          <div>
+            <label className="block text-gray-700 font-medium">Subject</label>
             <input
               type="text"
-              name="name"
-              value={profileData.name}
+              name="subject"
+              value={profile.subject || ""}
               onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-              required
+              placeholder="E.g. Mathematics"
+              className="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
           </div>
 
-          <h2 className="text-xl font-semibold mb-4 border-b pb-2 mt-6">
-            Teaching Profile
-          </h2>
+          {/* Skills */}
+          <div>
+            <label className="block text-gray-700 font-medium">Skills</label>
+            <input
+              type="text"
+              name="skills"
+              value={profile.skills || ""}
+              onChange={handleChange}
+              placeholder="E.g. React, Java, Python"
+              className="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            />
+          </div>
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">Bio</label>
+          {/* Experience */}
+          <div>
+            <label className="block text-gray-700 font-medium">
+              Experience (Years)
+            </label>
+            <input
+              type="number"
+              name="experienceYears"
+              value={profile.experienceYears || ""}
+              onChange={handleChange}
+              placeholder="E.g. 5"
+              className="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            />
+          </div>
+
+          {/* Hourly Rate */}
+          <div>
+            <label className="block text-gray-700 font-medium">
+              Hourly Rate (₹)
+            </label>
+            <input
+              type="number"
+              name="hourlyRate"
+              value={profile.hourlyRate || ""}
+              onChange={handleChange}
+              placeholder="E.g. 800"
+              className="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            />
+          </div>
+
+          {/* City */}
+          <div>
+            <label className="block text-gray-700 font-medium">City</label>
+            <input
+              type="text"
+              name="city"
+              value={profile.city || ""}
+              onChange={handleChange}
+              placeholder="E.g. Hyderabad"
+              className="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            />
+          </div>
+
+          {/* Bio */}
+          <div>
+            <label className="block text-gray-700 font-medium">Bio</label>
             <textarea
               name="bio"
-              value={profileData.bio}
+              value={profile.bio || ""}
               onChange={handleChange}
-              rows="3"
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-            />
-          </div>
-
-          <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Subject</label>
-              <input
-                type="text"
-                name="subject"
-                value={profileData.subject}
-                onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Skills</label>
-              <input
-                type="text"
-                name="skills"
-                value={profileData.skills}
-                onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                placeholder="e.g., Python, SQL"
-              />
-            </div>
-          </div>
-
-          <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Experience (years)</label>
-              <input
-                type="number"
-                name="experienceYears"
-                value={profileData.experienceYears}
-                onChange={handleChange}
-                min="0"
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Hourly Rate (₹)</label>
-              <input
-                type="number"
-                name="hourlyRate"
-                value={profileData.hourlyRate}
-                onChange={handleChange}
-                min="0"
-                step="10"
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">City</label>
-              <input
-                type="text"
-                name="city"
-                value={profileData.city}
-                onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-              />
-            </div>
-          </div>
-
-          <div className="mb-6 flex items-center gap-3">
-            <input
-              id="available"
-              type="checkbox"
-              name="available"
-              checked={profileData.available}
-              onChange={handleChange}
-              className="h-4 w-4"
-            />
-            <label htmlFor="available" className="text-sm text-gray-700">Available for bookings</label>
+              rows={4}
+              placeholder="Describe your teaching style, background, and specialties..."
+              className="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
+            ></textarea>
           </div>
 
           <button
             type="submit"
             disabled={saving}
-            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 transition"
+            className={`w-full py-2 text-white rounded ${
+              saving ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
+            } transition`}
           >
-            {saving ? "Saving..." : "Save Profile"}
+            {saving ? "Saving..." : "Save Changes"}
           </button>
         </form>
       </div>
