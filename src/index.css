@@ -16,3 +16,60 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
 }
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  background-color: #0f172a; /* fallback background */
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: #818cf8;
+  color: #fff;
+}
+@keyframes glowPulse {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.4),
+                0 0 20px rgba(139, 92, 246, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.6),
+                0 0 40px rgba(139, 92, 246, 0.4);
+  }
+}
+
+.glow-button {
+  animation: glowPulse 3s infinite ease-in-out;
+}
+@keyframes glowPulse {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.4),
+                0 0 20px rgba(139, 92, 246, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.6),
+                0 0 40px rgba(139, 92, 246, 0.4);
+  }
+}
+
+button:not([disabled]) {
+  animation: glowPulse 3s infinite ease-in-out;
+}
+@keyframes glowFocus {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.4),
+                0 0 20px rgba(139, 92, 246, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.6),
+                0 0 40px rgba(139, 92, 246, 0.4);
+  }
+}
+
+input:focus, textarea:focus {
+  animation: glowFocus 2s infinite ease-in-out;
+}

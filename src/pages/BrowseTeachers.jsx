@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 import Navbar from "../components/Navbar";
+import { motion } from "framer-motion";
+import { BookOpen, Star, Clock, MapPin, IndianRupee } from "lucide-react";
 
 export default function BrowseTeachers() {
   const [teachers, setTeachers] = useState([]);
@@ -26,61 +28,85 @@ export default function BrowseTeachers() {
 
   if (loading)
     return (
-      <div>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-700 text-white">
         <Navbar />
-        <div className="p-6 text-gray-700">Loading teachers...</div>
+        <div className="p-6 text-center pt-24 text-white/90 text-lg">
+          Loading tutors...
+        </div>
       </div>
     );
 
   return (
-    <div>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-700 text-white">
       <Navbar />
-      <div className="p-6 max-w-6xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6 text-gray-800">🎓 Find Tutors</h1>
+      <div className="pt-24 px-6 max-w-6xl mx-auto">
+        <h1 className="text-3xl font-bold mb-8 text-center">
+          🎓 Find Your Perfect Tutor
+        </h1>
 
         {error && (
-          <p className="bg-red-100 text-red-700 p-3 rounded mb-4 text-sm">
+          <p className="bg-red-500/30 text-red-200 p-3 rounded mb-4 text-center">
             {error}
           </p>
         )}
 
         {teachers.length === 0 ? (
-          <p className="text-gray-600">No teachers available right now.</p>
+          <p className="text-center text-white/80">
+            No teachers available right now.
+          </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {teachers.map((t) => (
-              <div
+            {teachers.map((t, i) => (
+              <motion.div
                 key={t.id}
-                className="bg-white p-5 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 border border-gray-100"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: i * 0.05 }}
+                className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20 hover:scale-[1.02] hover:shadow-2xl transition-all"
               >
-                {/* Teacher Info */}
-                <h2 className="text-lg font-semibold text-gray-900 mb-2">
+                <h2 className="text-xl font-semibold mb-2 text-white">
                   {t.user?.name || "Unnamed Teacher"}
                 </h2>
-                <p className="text-gray-700 text-sm">
-                  <strong>Subject:</strong> {t.subject || "Not specified"}
-                </p>
-                <p className="text-gray-700 text-sm">
-                  <strong>Skills:</strong> {t.skills || "Not specified"}
-                </p>
-                <p className="text-gray-700 text-sm">
-                  <strong>Experience:</strong> {t.experienceYears || 0} years
-                </p>
-                <p className="text-gray-700 text-sm">
-                  <strong>Hourly Rate:</strong> ₹{t.hourlyRate || 0}/hr
-                </p>
-                <p className="text-gray-700 text-sm mb-4">
-                  <strong>City:</strong> {t.city || "N/A"}
-                </p>
 
-                {/* View Profile Button */}
+                <div className="space-y-2 text-sm text-white/90">
+                  <p className="flex items-center gap-2">
+                    <BookOpen size={16} /> <strong>Subject:</strong>{" "}
+                    {t.subject || "N/A"}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <Star size={16} /> <strong>Skills:</strong>{" "}
+                    {t.skills || "N/A"}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <Clock size={16} /> <strong>Experience:</strong>{" "}
+                    {t.experienceYears || 0} years
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <IndianRupee size={16} /> <strong>Hourly Rate:</strong> ₹
+                    {t.hourlyRate || 0}/hr
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <MapPin size={16} /> <strong>City:</strong>{" "}
+                    {t.city || "N/A"}
+                  </p>
+                </div>
+
+                {/* 🔹 Improved "View Profile" Button */}
                 <button
                   onClick={() => navigate(`/teacher/${t.id}`)}
-                  className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition font-medium"
+                  className="glow-button mt-5 w-full py-2.5 rounded-lg 
+                             bg-gradient-to-r from-cyan-400 via-sky-500 to-purple-500 
+                             text-white font-semibold 
+                             shadow-lg shadow-sky-500/30 
+                             hover:shadow-cyan-400/50 
+                             hover:scale-[1.03] 
+                             transition-all duration-300 
+                             border border-white/20
+                             backdrop-blur-sm"
                 >
                   View Profile
                 </button>
-              </div>
+              </motion.div>
             ))}
           </div>
         )}

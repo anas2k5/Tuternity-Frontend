@@ -16,3 +16,13 @@ body {
 .animate-fade-in {
   animation: fade-in 0.3s ease-in-out;
 }
+/* App.css */
+body {
+  margin: 0;
+  padding: 0;
+}
+
+.main-content {
+  padding-top: 70px; /* adjust depending on navbar height */
+}
+

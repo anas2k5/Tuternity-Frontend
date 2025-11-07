@@ -1,53 +1,50 @@
-import React, { createContext, useState, useEffect } from "react";
+// src/context/AuthContext.js
+import { createContext, useState, useEffect, useContext } from "react";
+import { getJSON, setJSON, remove } from "../utils/storage";
 
 export const AuthContext = createContext();
 
-const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [role, setRole] = useState(null);
-  const [loading, setLoading] = useState(true);
+export default function AuthProvider({ children }) {
+  const [user, setUser] = useState(getJSON("profile"));
+  const [token, setToken] = useState(localStorage.getItem("token"));
+  const [role, setRole] = useState(localStorage.getItem("role"));
+  const [loading, setLoading] = useState(false);
 
+  // ✅ Save to localStorage whenever state changes
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const storedRole = localStorage.getItem("role");
-    const storedProfile = localStorage.getItem("profile");
+    if (user) setJSON("profile", user);
+    if (token) localStorage.setItem("token", token);
+    if (role) localStorage.setItem("role", role);
+  }, [user, token, role]);
 
-    let parsedProfile = null;
-    try {
-      parsedProfile = storedProfile ? JSON.parse(storedProfile) : null;
-    } catch {
-      parsedProfile = null;
-    }
-
-    if (token && storedRole) {
-      setUser(parsedProfile);
-      setRole(storedRole);
-    }
-
-    setLoading(false);
-  }, []);
-
+  // ✅ Logout clears everything
   const logout = () => {
-    localStorage.clear();
+    remove("profile");
+    remove("token");
+    remove("role");
     setUser(null);
+    setToken(null);
     setRole(null);
-    window.location.href = "/";
   };
 
-  if (loading)
-    return (
-      <div className="flex items-center justify-center h-screen text-gray-600">
-        <p className="text-lg font-semibold animate-pulse">
-          Loading, please wait...
-        </p>
-      </div>
-    );
+  const value = {
+    user,
+    setUser,
+    token,
+    setToken,
+    role,
+    setRole,
+    logout,
+    loading,
+    setLoading,
+  };
 
-  return (
-    <AuthContext.Provider value={{ user, role, setUser, setRole, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+// ✅ Custom hook for accessing Auth context easily
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error("useAuth must be used within an AuthProvider");
+  return context;
 };
-
-export default AuthProvider;

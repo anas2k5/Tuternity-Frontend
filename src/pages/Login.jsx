@@ -1,7 +1,9 @@
-import { useState, useContext } from "react";
-import axios from "axios";
+import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import { AuthContext } from "../context/AuthContext";
+import { motion } from "framer-motion";
+import AuthContainer from "../components/AuthContainer";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -13,48 +15,31 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("🟢 Login button clicked");
     setError("");
     setLoading(true);
 
     try {
-      console.log("🔹 Sending login request to backend...");
-
       const res = await axios.post("http://localhost:8081/api/auth/login", {
         email,
         password,
       });
 
       const { token, role, name, id } = res.data;
-      const userId = id;
+      if (!token || !id) throw new Error("Invalid response from server.");
 
-      if (!token || !userId) {
-        throw new Error("Invalid response from server. Missing token or userId.");
-      }
-
-      // 🟩 Save to localStorage
       localStorage.setItem("token", token);
       localStorage.setItem("role", role);
-      localStorage.setItem("profile", JSON.stringify({ email, name, role, id: userId }));
+      localStorage.setItem("profile", JSON.stringify({ email, name, role, id }));
 
-      // 🟩 Update global context
-      setUser({ email, name, role, id: userId });
+      setUser({ email, name, role, id });
       setRole(role);
 
-      // 🟩 Automatically include token for future requests
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-      // 🟩 Navigate based on role
-      if (role === "STUDENT" || role === "ROLE_STUDENT") {
-        navigate("/student");
-      } else if (role === "TEACHER" || role === "ROLE_TEACHER") {
-        navigate("/teacher");
-      } else if (role === "ADMIN" || role === "ROLE_ADMIN") {
-        navigate("/admin");
-      } else {
-        navigate("/not-authorized");
-      }
-
+      if (role === "STUDENT" || role === "ROLE_STUDENT") navigate("/student");
+      else if (role === "TEACHER" || role === "ROLE_TEACHER") navigate("/teacher");
+      else if (role === "ADMIN" || role === "ROLE_ADMIN") navigate("/admin");
+      else navigate("/not-authorized");
     } catch (err) {
       console.error("❌ Login failed:", err.response?.data || err.message);
       setError(err.response?.data?.message || "Invalid credentials. Please try again.");
@@ -64,56 +49,72 @@ export default function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-100">
-      <form
+    <AuthContainer>
+      <motion.form
         onSubmit={handleSubmit}
-        className="bg-white shadow-lg p-8 rounded-2xl w-full max-w-md"
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7 }}
+        className="bg-white/10 backdrop-blur-2xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.25)] p-10 rounded-3xl text-white"
       >
-        <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-extrabold drop-shadow-lg">TuterNity</h1>
+          <p className="text-sm text-white/70 mt-1">Learn • Grow • Connect</p>
+        </div>
+
+        <h2 className="text-3xl font-bold text-center mb-6">Welcome Back 👋</h2>
 
         {error && (
-          <p className="bg-red-100 text-red-600 p-2 rounded mb-3 text-center">
+          <p className="bg-red-500/30 border border-red-400 text-red-100 text-center p-2 rounded mb-3">
             {error}
           </p>
         )}
 
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full border p-2 rounded mb-3 focus:ring-2 focus:ring-blue-500 outline-none"
-          required
-        />
+        <div className="mb-4">
+          <label className="text-sm font-medium tracking-wide">Email</label>
+          <input
+            type="email"
+            value={email}
+            placeholder="Enter your email"
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full mt-1 bg-white/20 text-white placeholder-white/70 p-3 rounded-xl outline-none focus:ring-2 focus:ring-white/80 focus:bg-white/30 transition"
+            required
+          />
+        </div>
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full border p-2 rounded mb-3 focus:ring-2 focus:ring-blue-500 outline-none"
-          required
-        />
+        <div className="mb-6">
+          <label className="text-sm font-medium tracking-wide">Password</label>
+          <input
+            type="password"
+            value={password}
+            placeholder="Enter your password"
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full mt-1 bg-white/20 text-white placeholder-white/70 p-3 rounded-xl outline-none focus:ring-2 focus:ring-white/80 focus:bg-white/30 transition"
+            required
+          />
+        </div>
 
-        <button
-          type="submit"
+        <motion.button
+          whileHover={{ scale: 1.05, boxShadow: "0px 0px 15px rgba(255,255,255,0.6)" }}
+          whileTap={{ scale: 0.95 }}
           disabled={loading}
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition mb-4"
+          type="submit"
+          className="w-full py-3 bg-white text-indigo-700 font-bold rounded-xl hover:bg-indigo-100 transition shadow-lg shadow-indigo-500/30"
         >
           {loading ? "Logging in..." : "Login"}
-        </button>
+        </motion.button>
 
-        <p className="text-center text-sm">
+        <p className="text-center text-sm text-white/80 mt-5">
           Don’t have an account?{" "}
           <button
             type="button"
             onClick={() => navigate("/register")}
-            className="text-blue-600 font-medium hover:text-blue-800"
+            className="text-white font-semibold underline hover:text-gray-200"
           >
             Sign Up
           </button>
         </p>
-      </form>
-    </div>
+      </motion.form>
+    </AuthContainer>
   );
 }

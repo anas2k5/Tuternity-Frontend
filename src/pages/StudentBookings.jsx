@@ -3,6 +3,8 @@ import api from "../api";
 import Navbar from "../components/Navbar";
 import { getJSON } from "../utils/storage";
 import toast from "react-hot-toast";
+import { motion } from "framer-motion";
+import { Calendar, CreditCard, XCircle, CheckCircle, Clock } from "lucide-react";
 
 export default function StudentBookings() {
   const [bookings, setBookings] = useState([]);
@@ -10,21 +12,17 @@ export default function StudentBookings() {
   const [error, setError] = useState("");
   const [processingPaymentId, setProcessingPaymentId] = useState(null);
 
-  // 🔹 Fetch all student bookings
   const fetchBookings = async () => {
     setLoading(true);
     setError("");
-
     try {
       const profile = getJSON("profile");
       const studentId = profile?.id;
-
       if (!studentId) {
         setBookings([]);
         setLoading(false);
         return;
       }
-
       const res = await api.get(`/bookings/student/${studentId}`);
       setBookings(res.data || []);
     } catch (err) {
@@ -40,10 +38,8 @@ export default function StudentBookings() {
     fetchBookings();
   }, []);
 
-  // 🔹 Cancel booking
   const handleCancel = async (bookingId) => {
     if (!window.confirm("Are you sure you want to cancel this booking?")) return;
-
     try {
       await api.delete(`/bookings/${bookingId}`);
       toast.success("Booking cancelled successfully.");
@@ -57,7 +53,6 @@ export default function StudentBookings() {
     }
   };
 
-  // 🔹 Start payment
   const handlePayment = async (bookingId) => {
     setProcessingPaymentId(bookingId);
     try {
@@ -65,7 +60,6 @@ export default function StudentBookings() {
         `/stripe/create-checkout-session/${bookingId}`
       );
       const { url } = response.data;
-
       if (url) {
         toast("Redirecting to Stripe Checkout...", {
           icon: "💳",
@@ -86,81 +80,89 @@ export default function StudentBookings() {
     }
   };
 
-  // 🔹 Page Layout
   return (
-    <div>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-700 text-white">
       <Navbar />
-      <div className="p-6">
-        <h1 className="text-2xl font-bold mb-4">My Bookings</h1>
+      <div className="pt-24 px-6 max-w-6xl mx-auto">
+        <h1 className="text-3xl font-bold mb-8 text-center">My Bookings</h1>
 
         {loading ? (
-          <p>Loading bookings...</p>
+          <p className="text-center text-white/90">Loading bookings...</p>
         ) : error ? (
-          <p className="text-red-600">{error}</p>
+          <p className="text-red-200 text-center">{error}</p>
         ) : bookings.length === 0 ? (
-          <p>You have no bookings yet.</p>
+          <p className="text-center text-white/90">You have no bookings yet.</p>
         ) : (
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {bookings.map((b, i) => (
-              <div
+              <motion.div
                 key={b.id || i}
-                className="p-4 border rounded shadow flex justify-between items-center bg-white hover:shadow-md transition-all"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: i * 0.05 }}
+                className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg border border-white/20 p-5 flex flex-col justify-between hover:shadow-2xl hover:scale-[1.02] transition-all"
               >
-                <div>
-                  <h2 className="font-semibold text-lg">
+                <div className="space-y-2">
+                  <h2 className="font-bold text-xl text-white">
                     {b.teacherName || "Teacher"}
                   </h2>
-                  <p>Subject: {b.subject || "-"}</p>
-                  <p>Skills: {b.skills || "-"}</p>
-                  <p>
-                    Slot: {b.date || "-"} {b.timeSlot ? `| ${b.timeSlot}` : ""}
+                  <p className="text-white/90 text-sm">Subject: {b.subject}</p>
+                  <p className="text-white/90 text-sm">Skills: {b.skills}</p>
+                  <p className="text-white/90 text-sm flex items-center gap-1">
+                    <Calendar size={16} />
+                    {b.date} {b.timeSlot && `| ${b.timeSlot}`}
                   </p>
                 </div>
 
-                <div className="flex items-center space-x-3">
-                  {/* 🔹 Booking Status Badge */}
+                <div className="mt-4 flex flex-wrap items-center gap-2 justify-between">
+                  {/* Status Badge */}
                   <span
-                    className={`px-3 py-1 rounded text-sm font-medium ${
+                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
                       b.status === "PAID"
-                        ? "bg-green-600 text-white"
+                        ? "bg-green-500/80 text-white"
                         : b.status === "PENDING"
-                        ? "bg-yellow-500 text-white"
+                        ? "bg-yellow-500/80 text-white"
                         : b.status?.includes("CANCELLED")
-                        ? "bg-gray-500 text-white"
-                        : "bg-blue-500 text-white"
+                        ? "bg-gray-500/80 text-white"
+                        : "bg-blue-500/80 text-white"
                     }`}
                   >
+                    {b.status === "PAID" && <CheckCircle size={16} />}
+                    {b.status === "PENDING" && <Clock size={16} />}
+                    {b.status?.includes("CANCELLED") && <XCircle size={16} />}
                     {b.status || "UNKNOWN"}
                   </span>
 
-                  {/* 💳 Pay Now (only if PENDING) */}
+                  {/* Pay Now */}
                   {b.status === "PENDING" && (
                     <button
                       onClick={() => handlePayment(b.id)}
                       disabled={processingPaymentId === b.id}
-                      className={`px-3 py-1 rounded text-white font-medium transition ${
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-white font-medium transition ${
                         processingPaymentId === b.id
                           ? "bg-gray-400 cursor-not-allowed"
                           : "bg-green-600 hover:bg-green-700"
                       }`}
                     >
+                      <CreditCard size={16} />
                       {processingPaymentId === b.id
                         ? "Processing..."
-                        : "💳 Pay Now"}
+                        : "Pay Now"}
                     </button>
                   )}
 
-                  {/* ❌ Cancel (only if not PAID or CANCELLED) */}
-                  {b.status !== "PAID" && !b.status?.includes("CANCELLED") && (
-                    <button
-                      onClick={() => handleCancel(b.id)}
-                      className="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700 transition"
-                    >
-                      Cancel
-                    </button>
-                  )}
+                  {/* Cancel */}
+                  {b.status !== "PAID" &&
+                    !b.status?.includes("CANCELLED") && (
+                      <button
+                        onClick={() => handleCancel(b.id)}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium transition"
+                      >
+                        <XCircle size={16} /> Cancel
+                      </button>
+                    )}
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         )}

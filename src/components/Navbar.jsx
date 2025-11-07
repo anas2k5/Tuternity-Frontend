@@ -1,100 +1,103 @@
-import { Link, useNavigate } from "react-router-dom";
-import { getJSON } from "../utils/storage";
+import React from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { motion } from "framer-motion";
 
 export default function Navbar() {
+  const { user, role, logout } = useAuth();
   const navigate = useNavigate();
-  const profile = getJSON("profile");
-  const role = profile?.role || profile?.user?.role || "STUDENT"; // fallback
-  const isTeacher = role.toUpperCase() === "TEACHER";
+  const location = useLocation();
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate("/login");
+  const getLinks = () => {
+    const normalizedRole = role?.replace(/^ROLE_/, "").toUpperCase();
+
+    if (normalizedRole === "TEACHER") {
+      return [
+        { name: "Dashboard", path: "/teacher" },
+        { name: "My Bookings", path: "/teacher/bookings" },
+        { name: "Profile", path: "/teacher/profile" },
+        { name: "Availability", path: "/teacher/availability" },
+      ];
+    } else if (normalizedRole === "STUDENT") {
+      return [
+        { name: "Dashboard", path: "/student" },
+        { name: "My Bookings", path: "/student/bookings" },
+        { name: "Find Tutors", path: "/student/find-tutors" },
+        { name: "Profile", path: "/student/profile" },
+      ];
+    } else if (normalizedRole === "ADMIN") {
+      return [{ name: "Dashboard", path: "/admin" }];
+    }
+    return [];
   };
 
+  const activeClass =
+    "text-white font-semibold bg-white/20 px-3 py-1.5 rounded-lg shadow-md transition";
+
+  const normalClass =
+    "text-white/80 hover:text-white hover:bg-white/10 px-3 py-1.5 rounded-lg transition";
+
   return (
-    <nav className="bg-blue-600 text-white shadow-md">
-      <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
-        {/* Left Section - Logo */}
+    <motion.nav
+      initial={{ y: -40, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.6 }}
+      className="fixed top-0 left-0 w-full z-50 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 shadow-md backdrop-blur-md"
+    >
+      <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
+        {/* Logo */}
         <Link
           to="/"
-          className="text-2xl font-bold tracking-tight hover:text-gray-200 transition"
+          className="text-2xl font-extrabold text-white tracking-wide hover:scale-105 transition"
         >
-          Tuternity
+          Tutenity
         </Link>
 
-        {/* Middle Section - Navigation Links */}
-        <div className="flex items-center space-x-6 font-medium">
-          {isTeacher ? (
-            <>
-              <Link
-                to="/teacher"
-                className="hover:text-gray-200 transition duration-200"
-              >
-                Dashboard
-              </Link>
-              <Link
-                to="/teacher/bookings"
-                className="hover:text-gray-200 transition duration-200"
-              >
-                My Bookings
-              </Link>
-              <Link
-                to="/teacher/profile"
-                className="hover:text-gray-200 transition duration-200"
-              >
-                Profile
-              </Link>
-              <Link
-                to="/teacher/availability"
-                className="hover:text-gray-200 transition duration-200"
-              >
-                Availability
-              </Link>
-            </>
-          ) : (
-            <>
-              <Link
-                to="/student"
-                className="hover:text-gray-200 transition duration-200"
-              >
-                Dashboard
-              </Link>
-              <Link
-                to="/student/bookings"
-                className="hover:text-gray-200 transition duration-200"
-              >
-                My Bookings
-              </Link>
-              <Link
-                to="/student/find-tutors"
-                className="hover:text-gray-200 transition duration-200"
-              >
-                Find Tutors
-              </Link>
-              <Link
-                to="/student/profile"
-                className="hover:text-gray-200 transition duration-200"
-              >
-                Profile
-              </Link>
-            </>
-          )}
+        {/* Nav Links */}
+        <div className="hidden md:flex items-center gap-3">
+          {getLinks().map((link) => (
+            <Link
+              key={link.path}
+              to={link.path}
+              className={
+                location.pathname === link.path ? activeClass : normalClass
+              }
+            >
+              {link.name}
+            </Link>
+          ))}
         </div>
 
-        {/* Right Section - Role Badge + Logout */}
-        <div className="flex items-center space-x-3">
-          <span className="bg-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
-            {isTeacher ? "TEACHER" : "STUDENT"}
-          </span>
-          <button
-            onClick={handleLogout}
-            className="bg-red-500 hover:bg-red-600 px-4 py-1 rounded-md font-medium transition"
-          >
-            Logout
-          </button>
+        {/* Role Badge + Logout */}
+        <div className="flex items-center gap-3">
+          {role && (
+            <span className="bg-white/20 text-white text-xs px-3 py-1 rounded-full uppercase tracking-wide shadow-sm">
+              {role.replace(/^ROLE_/, "")}
+            </span>
+          )}
+
+          {user ? (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => {
+                logout();
+                navigate("/login");
+              }}
+              className="bg-red-500 text-white px-4 py-1.5 rounded-lg hover:bg-red-600 transition"
+            >
+              Logout
+            </motion.button>
+          ) : (
+            <Link
+              to="/login"
+              className="bg-white/20 text-white px-4 py-1.5 rounded-lg hover:bg-white/30 transition"
+            >
+              Login
+            </Link>
+          )}
         </div>
       </div>
-    </nav>
+    </motion.nav>
   );
 }

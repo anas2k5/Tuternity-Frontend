@@ -4,6 +4,19 @@ import Navbar from "../components/Navbar";
 import { getJSON } from "../utils/storage";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { motion } from "framer-motion";
+import {
+  User,
+  MapPin,
+  BookOpen,
+  Calendar,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  XCircle,
+  Search,
+  Edit3,
+} from "lucide-react";
 
 export default function StudentDashboard() {
   const [latestBooking, setLatestBooking] = useState(null);
@@ -11,7 +24,6 @@ export default function StudentDashboard() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // ✅ Fetch student profile
   const fetchProfile = async () => {
     try {
       const res = await api.get("/students/me");
@@ -22,7 +34,6 @@ export default function StudentDashboard() {
     }
   };
 
-  // ✅ Fetch latest booking
   const fetchLatestBooking = async () => {
     try {
       const localProfile = getJSON("profile");
@@ -34,7 +45,6 @@ export default function StudentDashboard() {
 
       const res = await api.get(`/bookings/student/${studentId}`);
       const bookings = res.data || [];
-
       if (bookings.length > 0) {
         const sorted = bookings.sort(
           (a, b) => new Date(b.date) - new Date(a.date)
@@ -55,100 +65,132 @@ export default function StudentDashboard() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-700 text-white">
       <Navbar />
-      <div className="p-8 max-w-5xl mx-auto">
+
+      <div className="pt-24 px-6 max-w-5xl mx-auto">
         {/* ✅ Student Welcome Section */}
-        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg border border-white/20 p-6 mb-8"
+        >
+          <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
             🎓 Welcome, {profile?.user?.name || "Student"}!
           </h1>
-          <p className="text-gray-600 text-sm">
-            {profile?.educationLevel
-              ? `${profile.educationLevel} • `
-              : ""}
-            {profile?.city || ""}
-          </p>
-          <p className="text-gray-600 mt-1">
-            {profile?.interests
-              ? `Interests: ${profile.interests}`
-              : ""}
-          </p>
-        </div>
+          <div className="text-white/90 space-y-1">
+            {profile?.educationLevel && (
+              <p className="flex items-center gap-2">
+                <BookOpen size={18} /> {profile.educationLevel}
+              </p>
+            )}
+            {profile?.city && (
+              <p className="flex items-center gap-2">
+                <MapPin size={18} /> {profile.city}
+              </p>
+            )}
+            {profile?.interests && (
+              <p className="flex items-center gap-2">
+                <User size={18} /> Interests: {profile.interests}
+              </p>
+            )}
+          </div>
+        </motion.div>
 
         {/* ✅ Latest Booking Section */}
-        {loading ? (
-          <p>Loading your latest booking...</p>
-        ) : latestBooking ? (
-          <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-            <h2 className="text-xl font-semibold mb-2">
-              📅 Latest Booking Summary
-            </h2>
-            <p>
-              <strong>Teacher:</strong> {latestBooking.teacherName}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          {loading ? (
+            <p className="text-center text-white/80">
+              Loading your latest booking...
             </p>
-            <p>
-              <strong>Subject:</strong> {latestBooking.subject}
-            </p>
-            <p>
-              <strong>Date:</strong> {latestBooking.date || "-"}
-            </p>
-            <p>
-              <strong>Time Slot:</strong> {latestBooking.timeSlot || "-"}
-            </p>
+          ) : latestBooking ? (
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg border border-white/20 p-6">
+              <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
+                <Calendar size={22} /> Latest Booking Summary
+              </h2>
+              <div className="text-white/90 space-y-1">
+                <p>
+                  <strong>Teacher:</strong> {latestBooking.teacherName}
+                </p>
+                <p>
+                  <strong>Subject:</strong> {latestBooking.subject}
+                </p>
+                <p>
+                  <strong>Date:</strong> {latestBooking.date || "-"}
+                </p>
+                <p>
+                  <strong>Time Slot:</strong> {latestBooking.timeSlot || "-"}
+                </p>
+              </div>
 
-            <div className="mt-3">
-              <span
-                className={`inline-block px-3 py-1 text-sm rounded font-medium ${
-                  latestBooking.status === "PAID"
-                    ? "bg-green-600 text-white"
-                    : latestBooking.status === "PENDING"
-                    ? "bg-yellow-500 text-white"
-                    : latestBooking.status?.includes("CANCELLED")
-                    ? "bg-gray-500 text-white"
-                    : "bg-blue-500 text-white"
-                }`}
-              >
-                {latestBooking.status}
-              </span>
-            </div>
+              <div className="mt-4">
+                <span
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
+                    latestBooking.status === "PAID"
+                      ? "bg-green-500/80 text-white"
+                      : latestBooking.status === "PENDING"
+                      ? "bg-yellow-500/80 text-white"
+                      : latestBooking.status?.includes("CANCELLED")
+                      ? "bg-gray-500/80 text-white"
+                      : "bg-blue-500/80 text-white"
+                  }`}
+                >
+                  {latestBooking.status === "PAID" && <CheckCircle size={16} />}
+                  {latestBooking.status === "PENDING" && <Clock size={16} />}
+                  {latestBooking.status?.includes("CANCELLED") && (
+                    <XCircle size={16} />
+                  )}
+                  {latestBooking.status}
+                </span>
+              </div>
 
-            <div className="mt-4 flex gap-3">
+              <div className="mt-6 flex flex-wrap gap-3">
+                <button
+                  onClick={() => navigate("/student/bookings")}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
+                >
+                  <Calendar size={18} /> View All Bookings
+                </button>
+                <button
+                  onClick={() => navigate("/student/find-tutors")}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2"
+                >
+                  <Search size={18} /> Find More Tutors
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg border border-white/20 p-6 text-center">
+              <p className="text-white/80">You have no recent bookings yet.</p>
               <button
-                onClick={() => navigate("/student/bookings")}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                onClick={() => navigate("/student/find-tutors")}
+                className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2 mx-auto"
               >
-                View All Bookings
-              </button>
-              <button
-                onClick={() => navigate("/student/teachers")}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
-              >
-                Find More Tutors
+                <Search size={18} /> Find a Teacher
               </button>
             </div>
-          </div>
-        ) : (
-          <div className="bg-white p-6 rounded-lg shadow text-center">
-            <p>You have no recent bookings yet.</p>
-            <button
-              onClick={() => navigate("/student/teachers")}
-              className="mt-3 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
-            >
-              Find a Teacher
-            </button>
-          </div>
-        )}
+          )}
+        </motion.div>
 
         {/* ✅ Profile Shortcut */}
-        <div className="text-center mt-8">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="text-center mt-10"
+        >
           <button
             onClick={() => navigate("/student/profile")}
-            className="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition"
+            className="px-6 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition flex items-center gap-2 mx-auto"
           >
-            View / Edit My Profile
+            <Edit3 size={18} /> View / Edit My Profile
           </button>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
