@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import api from "../api";
@@ -12,6 +12,15 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
+import {
+  Wallet,
+  CheckCircle2,
+  CalendarDays,
+  User,
+  BookOpen,
+  LineChart,
+} from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function TeacherDashboard() {
   const navigate = useNavigate();
@@ -23,23 +32,20 @@ export default function TeacherDashboard() {
     upcomingBookings: 0,
   });
   const [chartData, setChartData] = useState([]);
-  const [chartType, setChartType] = useState("sessions");
+  const [hoveredCard, setHoveredCard] = useState(null);
+  const paymentsRef = useRef(null);
 
   useEffect(() => {
     const profile = getJSON("profile");
-    const teacherId = profile?.id || profile?.user?.id; // ✅ safer check
+    const teacherId = profile?.id || profile?.user?.id;
 
     if (!teacherId) {
-      console.error("⚠️ No teacher ID found in profile");
       setLoading(false);
       return;
     }
 
-    const fetchDashboardData = async () => {
+    const fetchData = async () => {
       try {
-        setLoading(true);
-
-        // ✅ Fetch teacher stats
         const statsRes = await api.get(`/teacher-dashboard/${teacherId}/stats`);
         const data = statsRes.data || {};
 
@@ -52,198 +58,242 @@ export default function TeacherDashboard() {
           upcomingBookings: data.upcomingBookings || 0,
         });
 
-        // ✅ Prepare monthly chart data
         const chart = Object.entries(data.sessionsByMonth || {}).map(
           ([month, sessions]) => ({ month, sessions })
         );
         setChartData(chart);
 
-        // ✅ Fetch recent payments
-        const teacherRes = await api.get(`/stripe/payments/teacher/${teacherId}`);
-        setPayments(teacherRes.data || []);
+        const payRes = await api.get(`/stripe/payments/teacher/${teacherId}`);
+        setPayments(payRes.data || []);
       } catch (err) {
-        console.error("❌ Failed to load dashboard:", err);
+        console.error("❌ Error fetching dashboard:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDashboardData();
+    fetchData();
   }, []);
 
   const handleManageProfile = () => navigate("/teacher/profile");
   const handleManageAvailability = () => navigate("/teacher/availability");
   const handleViewBookings = () => navigate("/teacher/bookings");
+  const scrollToPayments = () => paymentsRef.current?.scrollIntoView({ behavior: "smooth" });
+
+  const statCards = [
+    {
+      label: "Total Earnings",
+      value: `₹${Number(stats.totalEarnings).toFixed(2)}`,
+      icon: Wallet,
+      color: "text-green-400",
+      tooltip: "View your recent payments",
+      onClick: scrollToPayments,
+    },
+    {
+      label: "Completed Sessions",
+      value: stats.completedSessions,
+      icon: CheckCircle2,
+      color: "text-blue-400",
+      tooltip: "See all completed bookings",
+      onClick: handleViewBookings,
+    },
+    {
+      label: "Upcoming Bookings",
+      value: stats.upcomingBookings,
+      icon: CalendarDays,
+      color: "text-yellow-400",
+      tooltip: "See all upcoming bookings",
+      onClick: handleViewBookings,
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-[#5b21b6] via-blue-700 to-purple-700 text-white">
       <Navbar />
 
-      <div className="page-container shadow-card animate-fade-in">
-        <h1 className="section-title">👨‍🏫 Teacher Dashboard</h1>
+      <div className="pt-24 px-6 max-w-6xl mx-auto">
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-3xl font-bold mb-6 text-center flex items-center justify-center gap-2"
+        >
+          👋 Welcome back,{" "}
+          <span className="text-cyan-300">
+            {getJSON("profile")?.user?.name || "Teacher"}
+          </span>
+          !
+        </motion.h1>
+
+        <p className="text-center text-white/80 mb-10">
+          Here’s a quick overview of your performance and activity.
+        </p>
 
         {loading ? (
-          <p className="text-gray-600 text-center italic">Loading your dashboard...</p>
+          <p className="text-center text-white/80">Loading your dashboard...</p>
         ) : (
           <>
             {/* ====== STATS SECTION ====== */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              <div className="bg-green-100 p-4 rounded-xl shadow text-center">
-                <h3 className="text-lg font-semibold text-green-800">
-                  💰 Total Earnings
-                </h3>
-                <p className="text-2xl font-bold text-green-700 mt-2">
-                  ₹{Number(stats.totalEarnings).toFixed(2)}
-                </p>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+              {statCards.map((item, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  onClick={item.onClick}
+                  onMouseEnter={() => setHoveredCard(i)}
+                  onMouseLeave={() => setHoveredCard(null)}
+                  className="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 shadow-lg hover:shadow-xl hover:bg-white/20 transition-all cursor-pointer"
+                >
+                  <div className="flex items-center justify-center gap-3 mb-3">
+                    <item.icon size={24} className={`${item.color}`} />
+                    <h3 className="text-lg font-semibold">{item.label}</h3>
+                  </div>
+                  <p className={`text-3xl font-bold text-center ${item.color}`}>
+                    {item.value}
+                  </p>
 
-              <div className="bg-blue-100 p-4 rounded-xl shadow text-center">
-                <h3 className="text-lg font-semibold text-blue-800">
-                  ✅ Completed Sessions
-                </h3>
-                <p className="text-2xl font-bold text-blue-700 mt-2">
-                  {stats.completedSessions}
-                </p>
-              </div>
-
-              <div className="bg-yellow-100 p-4 rounded-xl shadow text-center">
-                <h3 className="text-lg font-semibold text-yellow-800">
-                  📅 Upcoming Bookings
-                </h3>
-                <p className="text-2xl font-bold text-yellow-700 mt-2">
-                  {stats.upcomingBookings}
-                </p>
-              </div>
+                  {/* Tooltip */}
+                  {hoveredCard === i && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute left-1/2 -bottom-10 transform -translate-x-1/2 bg-white/20 backdrop-blur-md text-white text-xs px-3 py-1 rounded-lg shadow-md border border-white/20"
+                    >
+                      {item.tooltip}
+                    </motion.div>
+                  )}
+                </motion.div>
+              ))}
             </div>
 
-            {/* ====== DASHBOARD ACTIONS ====== */}
+            {/* ====== ACTIONS SECTION ====== */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-              <div
-                onClick={handleManageProfile}
-                className="bg-white shadow-lg p-6 rounded-xl cursor-pointer hover:bg-gray-50 transition duration-200"
-              >
-                <h2 className="text-lg font-semibold text-gray-800">
-                  👤 Manage Profile
-                </h2>
-                <p className="text-sm text-gray-600 mt-2">
-                  Update your bio, subject, skills, and hourly rate.
-                </p>
-              </div>
-
-              <div
-                onClick={handleManageAvailability}
-                className="bg-white shadow-lg p-6 rounded-xl cursor-pointer hover:bg-gray-50 transition duration-200"
-              >
-                <h2 className="text-lg font-semibold text-gray-800">
-                  📅 Manage Availability
-                </h2>
-                <p className="text-sm text-gray-600 mt-2">
-                  Add or remove available time slots.
-                </p>
-              </div>
-
-              <div
-                onClick={handleViewBookings}
-                className="bg-white shadow-lg p-6 rounded-xl cursor-pointer hover:bg-gray-50 transition duration-200"
-              >
-                <h2 className="text-lg font-semibold text-gray-800">
-                  📖 My Bookings
-                </h2>
-                <p className="text-sm text-gray-600 mt-2">
-                  View and manage all student bookings.
-                </p>
-              </div>
+              {[
+                {
+                  title: "Manage Profile",
+                  desc: "Update your bio, subject, skills, and hourly rate.",
+                  icon: User,
+                  onClick: handleManageProfile,
+                },
+                {
+                  title: "Manage Availability",
+                  desc: "Add or remove available time slots.",
+                  icon: CalendarDays,
+                  onClick: handleManageAvailability,
+                },
+                {
+                  title: "My Bookings",
+                  desc: "View and manage all student bookings.",
+                  icon: BookOpen,
+                  onClick: handleViewBookings,
+                },
+              ].map((card, i) => (
+                <motion.div
+                  key={i}
+                  onClick={card.onClick}
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 150 }}
+                  className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 shadow-md cursor-pointer hover:bg-white/20 transition-all text-center"
+                >
+                  <card.icon size={28} className="mx-auto mb-3 text-cyan-300" />
+                  <h2 className="text-lg font-semibold mb-1">{card.title}</h2>
+                  <p className="text-sm text-white/80">{card.desc}</p>
+                </motion.div>
+              ))}
             </div>
 
             {/* ====== ANALYTICS CHART ====== */}
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">📊 Analytics Overview</h2>
-              <select
-                value={chartType}
-                onChange={(e) => setChartType(e.target.value)}
-                className="border px-3 py-1 rounded-md text-gray-700 focus:ring-2 focus:ring-blue-400 outline-none"
-              >
-                <option value="sessions">📘 Sessions by Month</option>
-              </select>
+            <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 shadow-lg mb-10">
+              <h2 className="text-xl font-semibold flex items-center gap-2 mb-4">
+                <LineChart size={22} /> Analytics Overview
+              </h2>
+
+              {chartData.length === 0 ? (
+                <p className="text-center text-white/70 italic">
+                  No analytics data yet.
+                </p>
+              ) : (
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
+                      <XAxis dataKey="month" stroke="#ffffff90" />
+                      <YAxis stroke="#ffffff90" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "rgba(255,255,255,0.1)",
+                          border: "none",
+                          color: "#fff",
+                        }}
+                      />
+                      <Bar dataKey="sessions" fill="#38bdf8" radius={[8, 8, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </div>
 
-            {chartData.length === 0 ? (
-              <p className="text-gray-600 mb-10 text-center">
-                No data available to display chart.
-              </p>
-            ) : (
-              <div className="bg-white shadow rounded-xl p-4 mb-10">
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar
-                      dataKey="sessions"
-                      fill="#3b82f6"
-                      radius={[6, 6, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-
             {/* ====== RECENT PAYMENTS ====== */}
-            <h2 className="text-xl font-semibold mb-4">💵 Recent Payments</h2>
-            {payments.length === 0 ? (
-              <p className="text-gray-600 text-center">No payments found.</p>
-            ) : (
-              <div className="overflow-x-auto bg-white shadow rounded-xl">
-                <table className="min-w-full table-auto border-collapse">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-gray-700 font-semibold">
-                        Booking ID
-                      </th>
-                      <th className="px-4 py-2 text-left text-gray-700 font-semibold">
-                        Amount
-                      </th>
-                      <th className="px-4 py-2 text-left text-gray-700 font-semibold">
-                        Status
-                      </th>
-                      <th className="px-4 py-2 text-left text-gray-700 font-semibold">
-                        Student
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {payments
-                      .slice(-5)
-                      .reverse()
-                      .map((p) => (
-                        <tr key={p.id} className="border-b hover:bg-gray-50">
-                          <td className="px-4 py-2">{p.booking?.id || "-"}</td>
-                          <td className="px-4 py-2">
+            <div
+              ref={paymentsRef}
+              className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 shadow-lg"
+            >
+              <h2 className="text-xl font-semibold mb-4">💵 Recent Payments</h2>
+              {payments.length === 0 ? (
+                <p className="text-center text-white/70">
+                  No recent payments found.
+                </p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full border-collapse">
+                    <thead className="bg-white/10">
+                      <tr>
+                        {["Booking ID", "Amount", "Status", "Student"].map((h) => (
+                          <th
+                            key={h}
+                            className="px-4 py-3 text-left text-white/80 font-semibold uppercase text-sm"
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {payments.slice(-5).reverse().map((p) => (
+                        <tr
+                          key={p.id}
+                          className="border-b border-white/10 hover:bg-white/10 transition"
+                        >
+                          <td className="px-4 py-3">{p.booking?.id || "-"}</td>
+                          <td className="px-4 py-3">
                             ₹{p.amount ? p.amount.toFixed(2) : "0.00"}
                           </td>
-                          <td className="px-4 py-2">
+                          <td className="px-4 py-3">
                             <span
-                              className={`px-2 py-1 rounded text-sm ${
+                              className={`px-2 py-1 rounded text-xs font-semibold ${
                                 p.status === "SUCCESS"
-                                  ? "bg-green-200 text-green-800"
+                                  ? "bg-green-400/20 text-green-300"
                                   : p.status === "PENDING"
-                                  ? "bg-yellow-200 text-yellow-800"
-                                  : "bg-red-200 text-red-800"
+                                  ? "bg-yellow-400/20 text-yellow-300"
+                                  : "bg-red-400/20 text-red-300"
                               }`}
                             >
                               {p.status}
                             </span>
                           </td>
-                          <td className="px-4 py-2">
+                          <td className="px-4 py-3">
                             {p.booking?.student?.user?.name || "-"}
                           </td>
                         </tr>
                       ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>

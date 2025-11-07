@@ -3,6 +3,8 @@ import api from "../api";
 import Navbar from "../components/Navbar";
 import { getJSON } from "../utils/storage";
 import toast from "react-hot-toast";
+import { motion } from "framer-motion";
+import { BookOpen, Clock, User, Mail, Calendar, CheckCircle2, XCircle } from "lucide-react";
 
 export default function TeacherBookings() {
   const [bookings, setBookings] = useState([]);
@@ -73,67 +75,83 @@ export default function TeacherBookings() {
   };
 
   return (
-    <div>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-700 text-white">
       <Navbar />
-      <div className="p-6 max-w-6xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">My Student Bookings</h1>
+
+      <div className="pt-24 px-6 max-w-6xl mx-auto">
+        <motion.h1
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-3xl font-extrabold mb-8 flex items-center gap-2"
+        >
+          <BookOpen size={26} /> My Student Bookings
+        </motion.h1>
 
         {loading ? (
-          <p>Loading bookings...</p>
+          <p className="text-white/90 italic">Loading bookings...</p>
         ) : error ? (
-          <p className="text-red-600">{error}</p>
+          <p className="text-red-300">{error}</p>
         ) : bookings.length === 0 ? (
-          <p className="text-gray-600">No bookings found.</p>
+          <p className="text-white/80 italic">No bookings found.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full border border-gray-200 bg-white rounded-lg shadow">
-              <thead className="bg-gray-100 text-gray-700 uppercase text-sm">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-xl overflow-hidden"
+          >
+            <table className="w-full table-auto">
+              <thead className="bg-white/20 text-white uppercase text-sm font-semibold">
                 <tr>
-                  <th className="p-3 text-left">Student</th>
-                  <th className="p-3 text-left">Email</th>
-                  <th className="p-3 text-left">Date</th>
-                  <th className="p-3 text-left">Time Slot</th>
+                  <th className="p-3 text-left"><User size={16} className="inline mr-1" /> Student</th>
+                  <th className="p-3 text-left"><Mail size={16} className="inline mr-1" /> Email</th>
+                  <th className="p-3 text-left"><Calendar size={16} className="inline mr-1" /> Date</th>
+                  <th className="p-3 text-left"><Clock size={16} className="inline mr-1" /> Time</th>
                   <th className="p-3 text-left">Status</th>
                   <th className="p-3 text-left">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {bookings.map((b, i) => (
-                  <tr
+                  <motion.tr
                     key={b.id || i}
-                    className="border-t hover:bg-gray-50 transition-all"
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="border-t border-white/10 hover:bg-white/10 transition-all"
                   >
                     <td className="p-3">{b.studentName || "-"}</td>
                     <td className="p-3">{b.studentEmail || "-"}</td>
                     <td className="p-3">{b.date || "-"}</td>
                     <td className="p-3">{b.timeSlot || "-"}</td>
-                    <td
-                      className={`p-3 font-semibold ${
-                        b.status === "PAID"
-                          ? "text-green-600"
-                          : b.status === "COMPLETED"
-                          ? "text-blue-600"
-                          : b.status?.includes("CANCELLED")
-                          ? "text-red-600"
-                          : "text-gray-600"
-                      }`}
-                    >
-                      {b.status?.replaceAll("_", " ") || "UNKNOWN"}
+                    <td className="p-3 font-semibold">
+                      <span
+                        className={`px-3 py-1 rounded-lg text-sm ${
+                          b.status === "PAID"
+                            ? "bg-green-500/30 text-green-200"
+                            : b.status === "COMPLETED"
+                            ? "bg-blue-500/30 text-blue-200"
+                            : b.status?.includes("CANCELLED")
+                            ? "bg-red-500/30 text-red-200"
+                            : "bg-gray-400/20 text-gray-200"
+                        }`}
+                      >
+                        {b.status?.replaceAll("_", " ") || "UNKNOWN"}
+                      </span>
                     </td>
                     <td className="p-3">
                       {b.status === "PAID" && (
                         <button
                           onClick={() => handleComplete(b.id)}
                           disabled={updating === b.id}
-                          className={`px-3 py-1 rounded text-white ${
+                          className={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium ${
                             updating === b.id
                               ? "bg-gray-400 cursor-not-allowed"
-                              : "bg-blue-600 hover:bg-blue-700"
-                          }`}
+                              : "bg-blue-500 hover:bg-blue-600"
+                          } transition-all text-white`}
                         >
-                          {updating === b.id
-                            ? "Updating..."
-                            : "Mark as Completed"}
+                          <CheckCircle2 size={14} />
+                          {updating === b.id ? "Updating..." : "Mark Completed"}
                         </button>
                       )}
 
@@ -141,26 +159,27 @@ export default function TeacherBookings() {
                         <button
                           onClick={() => handleCancel(b.id)}
                           disabled={updating === b.id}
-                          className={`px-3 py-1 rounded text-white ${
+                          className={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium ${
                             updating === b.id
                               ? "bg-gray-400 cursor-not-allowed"
-                              : "bg-red-600 hover:bg-red-700"
-                          }`}
+                              : "bg-red-500 hover:bg-red-600"
+                          } transition-all text-white`}
                         >
+                          <XCircle size={14} />
                           {updating === b.id ? "Cancelling..." : "Cancel"}
                         </button>
                       )}
 
-                      {b.status?.includes("CANCELLED") ||
-                      b.status === "COMPLETED" ? (
-                        <span className="text-gray-500">N/A</span>
-                      ) : null}
+                      {(b.status?.includes("CANCELLED") ||
+                        b.status === "COMPLETED") && (
+                        <span className="text-white/60 italic">N/A</span>
+                      )}
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))}
               </tbody>
             </table>
-          </div>
+          </motion.div>
         )}
       </div>
     </div>

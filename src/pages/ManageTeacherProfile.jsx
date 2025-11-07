@@ -2,9 +2,21 @@ import { useEffect, useState } from "react";
 import api from "../api";
 import Navbar from "../components/Navbar";
 import toast from "react-hot-toast";
+import { motion } from "framer-motion";
+import {
+  User,
+  BookOpen,
+  Star,
+  Briefcase,
+  IndianRupee,
+  MapPin,
+  FileText,
+  Save,
+} from "lucide-react";
 
 export default function ManageTeacherProfile() {
   const [profile, setProfile] = useState({
+    user: { name: "" },
     subject: "",
     skills: "",
     experienceYears: "",
@@ -31,13 +43,21 @@ export default function ManageTeacherProfile() {
     fetchProfile();
   }, []);
 
-  // ✅ Handle input changes
+  // ✅ Handle field change (supports nested user.name)
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setProfile((prev) => ({ ...prev, [name]: value }));
+
+    if (name === "name") {
+      setProfile((prev) => ({
+        ...prev,
+        user: { ...prev.user, name: value },
+      }));
+    } else {
+      setProfile((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
-  // ✅ Save changes to backend
+  // ✅ Save profile to backend
   const handleSave = async (e) => {
     e.preventDefault();
     try {
@@ -57,114 +77,157 @@ export default function ManageTeacherProfile() {
     return (
       <div>
         <Navbar />
-        <div className="p-6 text-gray-700">Loading profile...</div>
+        <div className="p-6 text-white bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-700 min-h-screen">
+          Loading profile...
+        </div>
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-700 text-white">
       <Navbar />
-      <div className="p-8 max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6 text-gray-800">
-          👨‍🏫 Manage Your Teaching Profile
-        </h1>
 
-        <form
-          onSubmit={handleSave}
-          className="bg-white shadow-md rounded-xl p-6 space-y-4"
+      <div className="pt-24 px-6 flex justify-center">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="w-full max-w-3xl bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-xl p-8"
         >
-          {/* Subject */}
-          <div>
-            <label className="block text-gray-700 font-medium">Subject</label>
-            <input
-              type="text"
-              name="subject"
-              value={profile.subject || ""}
-              onChange={handleChange}
-              placeholder="E.g. Mathematics"
-              className="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            />
-          </div>
+          <h1 className="text-3xl font-extrabold text-center mb-8 flex items-center justify-center gap-2">
+            👨‍🏫 Manage Your Profile
+          </h1>
 
-          {/* Skills */}
-          <div>
-            <label className="block text-gray-700 font-medium">Skills</label>
-            <input
-              type="text"
-              name="skills"
-              value={profile.skills || ""}
-              onChange={handleChange}
-              placeholder="E.g. React, Java, Python"
-              className="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            />
-          </div>
+          <form onSubmit={handleSave} className="space-y-5">
+            {/* Name */}
+            <div>
+              <label className="flex items-center gap-2 text-white/90 font-semibold">
+                <User size={18} /> Name
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={profile.user?.name || ""}
+                onChange={handleChange}
+                placeholder="E.g. John Doe"
+                className="w-full mt-1 bg-white/10 text-white rounded-lg p-2 border border-white/20 placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+              />
+            </div>
 
-          {/* Experience */}
-          <div>
-            <label className="block text-gray-700 font-medium">
-              Experience (Years)
-            </label>
-            <input
-              type="number"
-              name="experienceYears"
-              value={profile.experienceYears || ""}
-              onChange={handleChange}
-              placeholder="E.g. 5"
-              className="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            />
-          </div>
+            {/* Subject */}
+            <div>
+              <label className="flex items-center gap-2 text-white/90 font-semibold">
+                <BookOpen size={18} /> Subject
+              </label>
+              <input
+                type="text"
+                name="subject"
+                value={profile.subject || ""}
+                onChange={handleChange}
+                placeholder="E.g. Mathematics"
+                className="w-full mt-1 bg-white/10 text-white rounded-lg p-2 border border-white/20 placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+              />
+            </div>
 
-          {/* Hourly Rate */}
-          <div>
-            <label className="block text-gray-700 font-medium">
-              Hourly Rate (₹)
-            </label>
-            <input
-              type="number"
-              name="hourlyRate"
-              value={profile.hourlyRate || ""}
-              onChange={handleChange}
-              placeholder="E.g. 800"
-              className="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            />
-          </div>
+            {/* Skills */}
+            <div>
+              <label className="flex items-center gap-2 text-white/90 font-semibold">
+                <Star size={18} /> Skills
+              </label>
+              <input
+                type="text"
+                name="skills"
+                value={profile.skills || ""}
+                onChange={handleChange}
+                placeholder="E.g. React, Java, Python"
+                className="w-full mt-1 bg-white/10 text-white rounded-lg p-2 border border-white/20 placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+              />
+            </div>
 
-          {/* City */}
-          <div>
-            <label className="block text-gray-700 font-medium">City</label>
-            <input
-              type="text"
-              name="city"
-              value={profile.city || ""}
-              onChange={handleChange}
-              placeholder="E.g. Hyderabad"
-              className="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            />
-          </div>
+            {/* Experience */}
+            <div>
+              <label className="flex items-center gap-2 text-white/90 font-semibold">
+                <Briefcase size={18} /> Experience (Years)
+              </label>
+              <input
+                type="number"
+                name="experienceYears"
+                value={profile.experienceYears || ""}
+                onChange={handleChange}
+                placeholder="E.g. 5"
+                className="w-full mt-1 bg-white/10 text-white rounded-lg p-2 border border-white/20 placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+              />
+            </div>
 
-          {/* Bio */}
-          <div>
-            <label className="block text-gray-700 font-medium">Bio</label>
-            <textarea
-              name="bio"
-              value={profile.bio || ""}
-              onChange={handleChange}
-              rows={4}
-              placeholder="Describe your teaching style, background, and specialties..."
-              className="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
-            ></textarea>
-          </div>
+            {/* Hourly Rate */}
+            <div>
+              <label className="flex items-center gap-2 text-white/90 font-semibold">
+                <IndianRupee size={18} /> Hourly Rate (₹)
+              </label>
+              <input
+                type="number"
+                name="hourlyRate"
+                value={profile.hourlyRate || ""}
+                onChange={handleChange}
+                placeholder="E.g. 800"
+                className="w-full mt-1 bg-white/10 text-white rounded-lg p-2 border border-white/20 placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+              />
+            </div>
 
-          <button
-            type="submit"
-            disabled={saving}
-            className={`w-full py-2 text-white rounded ${
-              saving ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
-            } transition`}
-          >
-            {saving ? "Saving..." : "Save Changes"}
-          </button>
-        </form>
+            {/* City */}
+            <div>
+              <label className="flex items-center gap-2 text-white/90 font-semibold">
+                <MapPin size={18} /> City
+              </label>
+              <input
+                type="text"
+                name="city"
+                value={profile.city || ""}
+                onChange={handleChange}
+                placeholder="E.g. Hyderabad"
+                className="w-full mt-1 bg-white/10 text-white rounded-lg p-2 border border-white/20 placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+              />
+            </div>
+
+            {/* Bio */}
+            <div>
+              <label className="flex items-center gap-2 text-white/90 font-semibold">
+                <FileText size={18} /> Bio
+              </label>
+              <textarea
+                name="bio"
+                value={profile.bio || ""}
+                onChange={handleChange}
+                rows={4}
+                placeholder="Describe your teaching style, background, and specialties..."
+                className="w-full mt-1 bg-white/10 text-white rounded-lg p-2 border border-white/20 placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400 resize-none"
+              ></textarea>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex justify-end gap-4 pt-4">
+              <button
+                type="button"
+                onClick={() => window.history.back()}
+                className="px-5 py-2 rounded-lg bg-white/20 hover:bg-white/30 text-white font-medium transition-all"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="submit"
+                disabled={saving}
+                className={`flex items-center justify-center gap-2 px-6 py-2 rounded-lg font-semibold text-white transition-all ${
+                  saving
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg"
+                }`}
+              >
+                <Save size={18} /> {saving ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </form>
+        </motion.div>
       </div>
     </div>
   );
