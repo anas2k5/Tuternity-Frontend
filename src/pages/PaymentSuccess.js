@@ -21,12 +21,15 @@ const PaymentSuccess = () => {
         setStatus("success");
         toast.success("Payment Successful! 🎉");
 
-        // Redirect after 3 seconds
-        setTimeout(() => navigate("/student/bookings"), 3000);
+        // Redirect after 2.5 seconds to student bookings so page remounts and fetches latest data
+        setTimeout(() => navigate("/student/bookings"), 2500);
       } catch (err) {
         console.error("❌ Verification failed:", err);
         setStatus("error");
-        toast.error("Payment verification failed. Please check again.");
+        const msg = err.response?.data?.error || "Payment verification failed. Please check again.";
+        toast.error(msg);
+        // redirect back to bookings after short delay
+        setTimeout(() => navigate("/student/bookings"), 3000);
       }
     };
 
@@ -34,7 +37,7 @@ const PaymentSuccess = () => {
     else {
       setStatus("invalid");
       toast.error("Invalid or missing booking ID.");
-      setTimeout(() => navigate("/student/bookings"), 3000);
+      setTimeout(() => navigate("/student/bookings"), 2000);
     }
   }, [bookingId, navigate]);
 
@@ -50,7 +53,7 @@ const PaymentSuccess = () => {
     return (
       <div style={styles.container}>
         <h1 style={{ color: "red" }}>❌ Payment Verification Failed</h1>
-        <p>Something went wrong. Redirecting you shortly...</p>
+        <p>Something went wrong. You will be redirected to your bookings page.</p>
       </div>
     );
   }

@@ -65,6 +65,7 @@ export default function StudentBookings() {
           icon: "💳",
           duration: 2000,
         });
+        // redirect user to Stripe checkout page
         window.location.href = url;
       } else {
         toast.error("Could not initiate payment. Please try again.");
@@ -122,19 +123,25 @@ export default function StudentBookings() {
                         ? "bg-green-500/80 text-white"
                         : b.status === "PENDING"
                         ? "bg-yellow-500/80 text-white"
+                        : b.status === "CONFIRMED"
+                        ? "bg-blue-500/80 text-white"
+                        : b.status === "COMPLETED"
+                        ? "bg-purple-500/80 text-white"
                         : b.status?.includes("CANCELLED")
                         ? "bg-gray-500/80 text-white"
-                        : "bg-blue-500/80 text-white"
+                        : "bg-gray-400/40 text-white"
                     }`}
                   >
                     {b.status === "PAID" && <CheckCircle size={16} />}
                     {b.status === "PENDING" && <Clock size={16} />}
+                    {b.status === "CONFIRMED" && <Clock size={16} />}
+                    {b.status === "COMPLETED" && <CheckCircle size={16} />}
                     {b.status?.includes("CANCELLED") && <XCircle size={16} />}
                     {b.status || "UNKNOWN"}
                   </span>
 
-                  {/* Pay Now */}
-                  {b.status === "PENDING" && (
+                  {/* ✅ Pay Now button (allow both PENDING and CONFIRMED) */}
+                  {(b.status === "PENDING" || b.status === "CONFIRMED") && (
                     <button
                       onClick={() => handlePayment(b.id)}
                       disabled={processingPaymentId === b.id}
@@ -145,22 +152,19 @@ export default function StudentBookings() {
                       }`}
                     >
                       <CreditCard size={16} />
-                      {processingPaymentId === b.id
-                        ? "Processing..."
-                        : "Pay Now"}
+                      {processingPaymentId === b.id ? "Processing..." : "Pay Now"}
                     </button>
                   )}
 
-                  {/* Cancel */}
-                  {b.status !== "PAID" &&
-                    !b.status?.includes("CANCELLED") && (
-                      <button
-                        onClick={() => handleCancel(b.id)}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium transition"
-                      >
-                        <XCircle size={16} /> Cancel
-                      </button>
-                    )}
+                  {/* ✅ Cancel button only for PENDING or CONFIRMED */}
+                  {(b.status === "PENDING" || b.status === "CONFIRMED") && (
+                    <button
+                      onClick={() => handleCancel(b.id)}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium transition"
+                    >
+                      <XCircle size={16} /> Cancel
+                    </button>
+                  )}
                 </div>
               </motion.div>
             ))}

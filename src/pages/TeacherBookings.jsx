@@ -4,13 +4,22 @@ import Navbar from "../components/Navbar";
 import { getJSON } from "../utils/storage";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
-import { BookOpen, Clock, User, Mail, Calendar, CheckCircle2, XCircle } from "lucide-react";
+import {
+  BookOpen,
+  Clock,
+  User,
+  Mail,
+  Calendar,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react";
 
 export default function TeacherBookings() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updating, setUpdating] = useState(null);
+  const [completedIds, setCompletedIds] = useState(new Set());
 
   // ✅ Fetch all teacher bookings
   const fetchBookings = async () => {
@@ -44,11 +53,12 @@ export default function TeacherBookings() {
 
   // ✅ Cancel booking
   const handleCancel = async (bookingId) => {
-    if (!window.confirm("Are you sure you want to cancel this booking?")) return;
+    if (!window.confirm("Are you sure you want to cancel this booking?"))
+      return;
 
     try {
       setUpdating(bookingId);
-      await api.delete(`/bookings/teacher/${bookingId}`);
+      await api.delete(`/bookings/teacher/cancel/${bookingId}`);
       toast.success("Booking cancelled successfully.");
       fetchBookings();
     } catch (err) {
@@ -59,16 +69,39 @@ export default function TeacherBookings() {
     }
   };
 
+  // ✅ Confirm booking
+  const handleConfirm = async (bookingId) => {
+    try {
+      setUpdating(bookingId);
+      await api.put(`/bookings/${bookingId}/confirm`);
+      toast.success("Booking confirmed successfully!");
+      fetchBookings();
+    } catch (err) {
+      console.error("❌ Error confirming booking:", err);
+      toast.error("Failed to confirm booking.");
+    } finally {
+      setUpdating(null);
+    }
+  };
+
   // ✅ Mark as completed
   const handleComplete = async (bookingId) => {
     try {
       setUpdating(bookingId);
       await api.put(`/bookings/${bookingId}/complete`);
-      toast.success("Booking marked as completed.");
-      fetchBookings();
+      toast.success("Booking marked as completed!");
+      // instantly update UI
+      setCompletedIds((prev) => new Set(prev).add(bookingId));
+      setBookings((prev) =>
+        prev.map((b) =>
+          b.id === bookingId ? { ...b, status: "COMPLETED" } : b
+        )
+      );
     } catch (err) {
-      console.error("❌ Error marking complete:", err);
-      toast.error("Failed to update booking status.");
+      console.error("❌ Error marking completed:", err);
+      toast.error(
+        err.response?.data?.message || "Failed to update booking status."
+      );
     } finally {
       setUpdating(null);
     }
@@ -103,10 +136,18 @@ export default function TeacherBookings() {
             <table className="w-full table-auto">
               <thead className="bg-white/20 text-white uppercase text-sm font-semibold">
                 <tr>
-                  <th className="p-3 text-left"><User size={16} className="inline mr-1" /> Student</th>
-                  <th className="p-3 text-left"><Mail size={16} className="inline mr-1" /> Email</th>
-                  <th className="p-3 text-left"><Calendar size={16} className="inline mr-1" /> Date</th>
-                  <th className="p-3 text-left"><Clock size={16} className="inline mr-1" /> Time</th>
+                  <th className="p-3 text-left">
+                    <User size={16} className="inline mr-1" /> Student
+                  </th>
+                  <th className="p-3 text-left">
+                    <Mail size={16} className="inline mr-1" /> Email
+                  </th>
+                  <th className="p-3 text-left">
+                    <Calendar size={16} className="inline mr-1" /> Date
+                  </th>
+                  <th className="p-3 text-left">
+                    <Clock size={16} className="inline mr-1" /> Time
+                  </th>
                   <th className="p-3 text-left">Status</th>
                   <th className="p-3 text-left">Action</th>
                 </tr>
@@ -131,6 +172,8 @@ export default function TeacherBookings() {
                             ? "bg-green-500/30 text-green-200"
                             : b.status === "COMPLETED"
                             ? "bg-blue-500/30 text-blue-200"
+                            : b.status === "CONFIRMED"
+                            ? "bg-yellow-500/30 text-yellow-200"
                             : b.status?.includes("CANCELLED")
                             ? "bg-red-500/30 text-red-200"
                             : "bg-gray-400/20 text-gray-200"
@@ -140,38 +183,62 @@ export default function TeacherBookings() {
                       </span>
                     </td>
                     <td className="p-3">
-                      {b.status === "PAID" && (
+                      {/* ✅ Pending: show Confirm + Cancel */}
+                      {b.status === "PENDING" && (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleConfirm(b.id)}
+                            disabled={updating === b.id}
+                            className={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium ${
+                              updating === b.id
+                                ? "bg-gray-400 cursor-not-allowed"
+                                : "bg-green-500 hover:bg-green-600"
+                            } transition-all text-white`}
+                          >
+                            <CheckCircle2 size={14} />
+                            {updating === b.id ? "Confirming..." : "Confirm"}
+                          </button>
+
+                          <button
+                            onClick={() => handleCancel(b.id)}
+                            disabled={updating === b.id}
+                            className={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium ${
+                              updating === b.id
+                                ? "bg-gray-400 cursor-not-allowed"
+                                : "bg-red-500 hover:bg-red-600"
+                            } transition-all text-white`}
+                          >
+                            <XCircle size={14} />
+                            {updating === b.id ? "Cancelling..." : "Cancel"}
+                          </button>
+                        </div>
+                      )}
+
+                      {/* ✅ Mark Completed for CONFIRMED or PAID */}
+                      {(b.status === "CONFIRMED" || b.status === "PAID") && (
                         <button
                           onClick={() => handleComplete(b.id)}
-                          disabled={updating === b.id}
+                          disabled={updating === b.id || completedIds.has(b.id)}
                           className={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium ${
-                            updating === b.id
+                            completedIds.has(b.id)
+                              ? "bg-green-600 cursor-not-allowed"
+                              : updating === b.id
                               ? "bg-gray-400 cursor-not-allowed"
                               : "bg-blue-500 hover:bg-blue-600"
                           } transition-all text-white`}
                         >
                           <CheckCircle2 size={14} />
-                          {updating === b.id ? "Updating..." : "Mark Completed"}
+                          {completedIds.has(b.id)
+                            ? "Completed"
+                            : updating === b.id
+                            ? "Updating..."
+                            : "Mark Completed"}
                         </button>
                       )}
 
-                      {b.status === "PENDING" && (
-                        <button
-                          onClick={() => handleCancel(b.id)}
-                          disabled={updating === b.id}
-                          className={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium ${
-                            updating === b.id
-                              ? "bg-gray-400 cursor-not-allowed"
-                              : "bg-red-500 hover:bg-red-600"
-                          } transition-all text-white`}
-                        >
-                          <XCircle size={14} />
-                          {updating === b.id ? "Cancelling..." : "Cancel"}
-                        </button>
-                      )}
-
-                      {(b.status?.includes("CANCELLED") ||
-                        b.status === "COMPLETED") && (
+                      {/* ✅ No Action for Completed / Cancelled */}
+                      {(b.status === "COMPLETED" ||
+                        b.status?.includes("CANCELLED")) && (
                         <span className="text-white/60 italic">N/A</span>
                       )}
                     </td>
