@@ -78,7 +78,8 @@ export default function TeacherDashboard() {
   const handleManageProfile = () => navigate("/teacher/profile");
   const handleManageAvailability = () => navigate("/teacher/availability");
   const handleViewBookings = () => navigate("/teacher/bookings");
-  const scrollToPayments = () => paymentsRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToPayments = () =>
+    paymentsRef.current?.scrollIntoView({ behavior: "smooth" });
 
   const statCards = [
     {
@@ -107,6 +108,24 @@ export default function TeacherDashboard() {
     },
   ];
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "—";
+    const date = new Date(dateString);
+    return date.toLocaleString("en-IN", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  };
+
+  const totalEarningsFromPayments = payments
+    .filter((p) => p.status === "SUCCESS")
+    .reduce((sum, p) => sum + (p.amount || 0), 0);
+
+  // ✅ Safely get teacher name
+  const profile = getJSON("profile");
+  const teacherName =
+    profile?.name || profile?.user?.name || "Teacher";
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#5b21b6] via-blue-700 to-purple-700 text-white">
       <Navbar />
@@ -119,10 +138,7 @@ export default function TeacherDashboard() {
           className="text-3xl font-bold mb-6 text-center flex items-center justify-center gap-2"
         >
           👋 Welcome back,{" "}
-          <span className="text-cyan-300">
-            {getJSON("profile")?.user?.name || "Teacher"}
-          </span>
-          !
+          <span className="text-cyan-300">{teacherName}</span>!
         </motion.h1>
 
         <p className="text-center text-white/80 mb-10">
@@ -154,7 +170,6 @@ export default function TeacherDashboard() {
                     {item.value}
                   </p>
 
-                  {/* Tooltip */}
                   {hoveredCard === i && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
@@ -229,7 +244,11 @@ export default function TeacherDashboard() {
                           color: "#fff",
                         }}
                       />
-                      <Bar dataKey="sessions" fill="#38bdf8" radius={[8, 8, 0, 0]} />
+                      <Bar
+                        dataKey="sessions"
+                        fill="#38bdf8"
+                        radius={[8, 8, 0, 0]}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -241,7 +260,25 @@ export default function TeacherDashboard() {
               ref={paymentsRef}
               className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 shadow-lg"
             >
-              <h2 className="text-xl font-semibold mb-4">💵 Recent Payments</h2>
+              <h2 className="text-xl font-semibold mb-2 flex items-center gap-2">
+                💵 Recent Payments
+              </h2>
+
+              {/* ✅ Total Earnings Summary with animation */}
+              {payments.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="text-sm text-green-300 mb-4 bg-green-400/10 border border-green-400/20 px-4 py-2 rounded-lg w-fit shadow-md"
+                >
+                  💰 Total Earnings from Successful Payments:{" "}
+                  <span className="font-semibold">
+                    ₹{totalEarningsFromPayments.toFixed(2)}
+                  </span>
+                </motion.div>
+              )}
+
               {payments.length === 0 ? (
                 <p className="text-center text-white/70">
                   No recent payments found.
@@ -251,7 +288,13 @@ export default function TeacherDashboard() {
                   <table className="min-w-full border-collapse">
                     <thead className="bg-white/10">
                       <tr>
-                        {["Booking ID", "Amount", "Status", "Student"].map((h) => (
+                        {[
+                          "BOOKING ID",
+                          "AMOUNT",
+                          "STATUS",
+                          "STUDENT",
+                          "DATE",
+                        ].map((h) => (
                           <th
                             key={h}
                             className="px-4 py-3 text-left text-white/80 font-semibold uppercase text-sm"
@@ -286,6 +329,9 @@ export default function TeacherDashboard() {
                           </td>
                           <td className="px-4 py-3">
                             {p.booking?.student?.user?.name || "-"}
+                          </td>
+                          <td className="px-4 py-3">
+                            {formatDate(p.createdAt)}
                           </td>
                         </tr>
                       ))}
