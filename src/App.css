@@ -25,4 +25,8 @@ body {
 .main-content {
   padding-top: 70px; /* adjust depending on navbar height */
 }
+input:focus {
+  outline: none;
+  box-shadow: 0 0 4px rgba(59, 130, 246, 0.6);
+}
 
