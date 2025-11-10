@@ -1,6 +1,6 @@
 import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../api"; // ✅ use your custom axios instance
 import { AuthContext } from "../context/AuthContext";
 import { motion } from "framer-motion";
 import AuthContainer from "../components/AuthContainer";
@@ -19,30 +19,31 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await axios.post("http://localhost:8081/api/auth/login", {
-        email,
-        password,
-      });
+      // ✅ Using your api instance ensures interceptor adds Authorization token automatically later
+      const res = await api.post("/auth/login", { email, password });
 
       const { token, role, name, id } = res.data;
       if (!token || !id) throw new Error("Invalid response from server.");
 
+      // ✅ Save credentials in localStorage for persistence
       localStorage.setItem("token", token);
       localStorage.setItem("role", role);
       localStorage.setItem("profile", JSON.stringify({ email, name, role, id }));
 
+      // ✅ Update global context
       setUser({ email, name, role, id });
       setRole(role);
 
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-
+      // ✅ Navigation logic (no axios global needed)
       if (role === "STUDENT" || role === "ROLE_STUDENT") navigate("/student");
       else if (role === "TEACHER" || role === "ROLE_TEACHER") navigate("/teacher");
       else if (role === "ADMIN" || role === "ROLE_ADMIN") navigate("/admin");
       else navigate("/not-authorized");
     } catch (err) {
       console.error("❌ Login failed:", err.response?.data || err.message);
-      setError(err.response?.data?.message || "Invalid credentials. Please try again.");
+      setError(
+        err.response?.data?.message || "Invalid credentials. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -62,7 +63,9 @@ export default function Login() {
           <p className="text-sm text-white/70 mt-1">Learn • Grow • Connect</p>
         </div>
 
-        <h2 className="text-3xl font-bold text-center mb-6">Welcome Back 👋</h2>
+        <h2 className="text-3xl font-bold text-center mb-6">
+          Welcome Back 👋
+        </h2>
 
         {error && (
           <p className="bg-red-500/30 border border-red-400 text-red-100 text-center p-2 rounded mb-3">
@@ -95,7 +98,10 @@ export default function Login() {
         </div>
 
         <motion.button
-          whileHover={{ scale: 1.05, boxShadow: "0px 0px 15px rgba(255,255,255,0.6)" }}
+          whileHover={{
+            scale: 1.05,
+            boxShadow: "0px 0px 15px rgba(255,255,255,0.6)",
+          }}
           whileTap={{ scale: 0.95 }}
           disabled={loading}
           type="submit"
