@@ -10,6 +10,7 @@ import {
   Link as LinkIcon,
   Copy,
   Save,
+  CheckCircle,
 } from "lucide-react";
 
 export default function TeacherBookings() {
@@ -20,6 +21,7 @@ export default function TeacherBookings() {
   const [editingBooking, setEditingBooking] = useState(null);
   const [meetingLink, setMeetingLink] = useState("");
 
+  // ✅ Fetch bookings
   const fetchBookings = async () => {
     setLoading(true);
     try {
@@ -44,6 +46,7 @@ export default function TeacherBookings() {
     fetchBookings();
   }, []);
 
+  // ✅ Cancel Booking
   const handleCancel = async (id) => {
     if (!window.confirm("Cancel this booking?")) return;
     try {
@@ -58,6 +61,7 @@ export default function TeacherBookings() {
     }
   };
 
+  // ✅ Confirm Booking
   const handleConfirm = async (id) => {
     try {
       setUpdating(id);
@@ -71,6 +75,21 @@ export default function TeacherBookings() {
     }
   };
 
+  // ✅ Mark Booking Completed
+  const handleComplete = async (id) => {
+    try {
+      setUpdating(id);
+      await api.put(`/bookings/${id}/complete`);
+      toast.success("Booking marked as completed!");
+      fetchBookings();
+    } catch {
+      toast.error("Failed to mark as completed.");
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  // ✅ Save Meeting Link
   const handleSaveLink = async () => {
     if (!meetingLink.trim()) return toast.error("Enter a valid meeting link.");
     try {
@@ -89,6 +108,7 @@ export default function TeacherBookings() {
     }
   };
 
+  // ✅ Copy Link
   const handleCopyLink = (link) => {
     navigator.clipboard.writeText(link);
     toast.success("Link copied!");
@@ -184,44 +204,63 @@ export default function TeacherBookings() {
 
                       {/* Confirmed or Paid */}
                       {(b.status === "CONFIRMED" || b.status === "PAID") && (
-                        <div className="flex gap-2 items-center">
-                          {b.meetingLink ? (
-                            <>
-                              <a
-                                href={b.meetingLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-300 underline flex items-center gap-1 text-sm"
-                              >
-                                <LinkIcon size={14} /> Join
-                              </a>
-                              <button
-                                onClick={() => handleCopyLink(b.meetingLink)}
-                                className="text-white/80 hover:text-white flex items-center gap-1 text-sm"
-                              >
-                                <Copy size={14} /> Copy
-                              </button>
+                        <div className="flex flex-col gap-2">
+                          <div className="flex gap-2 items-center">
+                            {b.meetingLink ? (
+                              <>
+                                <a
+                                  href={b.meetingLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-300 underline flex items-center gap-1 text-sm"
+                                >
+                                  <LinkIcon size={14} /> Join
+                                </a>
+                                <button
+                                  onClick={() => handleCopyLink(b.meetingLink)}
+                                  className="text-white/80 hover:text-white flex items-center gap-1 text-sm"
+                                >
+                                  <Copy size={14} /> Copy
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEditingBooking(b);
+                                    setMeetingLink(b.meetingLink || "");
+                                  }}
+                                  className="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded-lg text-sm"
+                                >
+                                  Edit Link
+                                </button>
+                              </>
+                            ) : (
                               <button
                                 onClick={() => {
                                   setEditingBooking(b);
-                                  setMeetingLink(b.meetingLink || "");
+                                  setMeetingLink("");
                                 }}
-                                className="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded-lg text-sm"
+                                className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded-lg text-sm flex items-center gap-1"
                               >
-                                Edit Link
+                                <LinkIcon size={14} /> Meeting Link
                               </button>
-                            </>
-                          ) : (
-                            <button
-                              onClick={() => {
-                                setEditingBooking(b);
-                                setMeetingLink("");
-                              }}
-                              className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded-lg text-sm flex items-center gap-1"
-                            >
-                              <LinkIcon size={14} /> Meeting Link
-                            </button>
-                          )}
+                            )}
+                          </div>
+
+ {/* ✅ Mark as Completed - perfectly matched size */}
+<button
+  onClick={() => handleComplete(b.id)}
+  disabled={updating === b.id}
+  className={`bg-green-500 hover:bg-green-600 px-3 py-1 rounded-lg text-sm text-white flex items-center justify-center transition-all ${
+    updating === b.id ? "opacity-60 cursor-not-allowed" : ""
+  }`}
+  style={{
+    height: "32px", // 👈 same as Meeting Link button height
+    minWidth: "110px", // 👈 ensures width alignment
+  }}
+>
+  Mark Completed
+</button>
+
+
                         </div>
                       )}
 
