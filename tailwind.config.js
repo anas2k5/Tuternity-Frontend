@@ -1,6 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  // ✅ Add this line for dark mode support
+  darkMode: "class",
+
   content: ["./src/**/*.{js,jsx,ts,tsx}"],
+
   theme: {
     extend: {
       // 🌈 Gradient Animations
@@ -44,5 +48,6 @@ module.exports = {
       },
     },
   },
-  plugins: [],
+
+  plugins: [require('tailwind-scrollbar-hide')],
 };

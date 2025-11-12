@@ -2,74 +2,46 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Default React styles */
+/* ✅ Global Base Layout */
+html, body, #root {
+  @apply min-h-screen w-full overflow-x-hidden transition-colors duration-700 bg-[#f5f8ff] text-[#1E1E2F] dark:bg-[#0f172a] dark:text-gray-100;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-    monospace;
-}
-html, body, #root {
-  height: 100%;
-  width: 100%;
-  background-color: #0f172a; /* fallback background */
-  overflow-x: hidden;
-}
-
-* {
-  box-sizing: border-box;
 }
 
 ::selection {
   background: #818cf8;
   color: #fff;
 }
-@keyframes glowPulse {
-  0%, 100% {
-    box-shadow: 0 0 10px rgba(56, 189, 248, 0.4),
-                0 0 20px rgba(139, 92, 246, 0.2);
-  }
-  50% {
-    box-shadow: 0 0 20px rgba(56, 189, 248, 0.6),
-                0 0 40px rgba(139, 92, 246, 0.4);
-  }
+
+/* 🌈 Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #a5b4fc, #c4b5fd, #f9a8d4);
+  border-radius: 8px;
+  border: 2px solid #f1f1f4;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #818cf8, #a78bfa, #f472b6);
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #4f46e5, #9333ea, #ec4899);
+  border: 2px solid #1f2937;
 }
 
-.glow-button {
-  animation: glowPulse 3s infinite ease-in-out;
-}
-@keyframes glowPulse {
-  0%, 100% {
-    box-shadow: 0 0 10px rgba(56, 189, 248, 0.4),
-                0 0 20px rgba(139, 92, 246, 0.2);
-  }
-  50% {
-    box-shadow: 0 0 20px rgba(56, 189, 248, 0.6),
-                0 0 40px rgba(139, 92, 246, 0.4);
-  }
-}
-
-button:not([disabled]) {
-  animation: glowPulse 3s infinite ease-in-out;
-}
-@keyframes glowFocus {
-  0%, 100% {
-    box-shadow: 0 0 10px rgba(56, 189, 248, 0.4),
-                0 0 20px rgba(139, 92, 246, 0.2);
-  }
-  50% {
-    box-shadow: 0 0 20px rgba(56, 189, 248, 0.6),
-                0 0 40px rgba(139, 92, 246, 0.4);
-  }
-}
-
-input:focus, textarea:focus {
-  animation: glowFocus 2s infinite ease-in-out;
+/* Smooth transitions */
+body {
+  transition: background-color 0.6s ease, color 0.6s ease;
 }
