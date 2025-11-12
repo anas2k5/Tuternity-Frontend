@@ -1,6 +1,6 @@
 import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api"; // ✅ use your custom axios instance
+import api from "../api";
 import { AuthContext } from "../context/AuthContext";
 import { motion } from "framer-motion";
 import AuthContainer from "../components/AuthContainer";
@@ -19,22 +19,31 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // ✅ Using your api instance ensures interceptor adds Authorization token automatically later
+      // ✅ API call
       const res = await api.post("/auth/login", { email, password });
 
-      const { token, role, name, id } = res.data;
-      if (!token || !id) throw new Error("Invalid response from server.");
+      const {
+        accessToken,
+        refreshToken,
+        role,
+        name,
+        id,
+      } = res.data;
 
-      // ✅ Save credentials in localStorage for persistence
-      localStorage.setItem("token", token);
+      if (!accessToken || !refreshToken || !id)
+        throw new Error("Invalid response from server.");
+
+      // ✅ Save tokens & profile
+      localStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("refreshToken", refreshToken);
       localStorage.setItem("role", role);
       localStorage.setItem("profile", JSON.stringify({ email, name, role, id }));
 
-      // ✅ Update global context
+      // ✅ Update context
       setUser({ email, name, role, id });
       setRole(role);
 
-      // ✅ Navigation logic (no axios global needed)
+      // ✅ Navigate based on role
       if (role === "STUDENT" || role === "ROLE_STUDENT") navigate("/student");
       else if (role === "TEACHER" || role === "ROLE_TEACHER") navigate("/teacher");
       else if (role === "ADMIN" || role === "ROLE_ADMIN") navigate("/admin");

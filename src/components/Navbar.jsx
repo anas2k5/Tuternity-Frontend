@@ -2,12 +2,28 @@ import React from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { motion } from "framer-motion";
+import toast from "react-hot-toast";
 
 export default function Navbar() {
-  const { user, role, logout } = useAuth();
+  const { user, role, setUser, setRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
+  // ✅ Logout function — clears both access + refresh tokens
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("profile");
+    localStorage.removeItem("role");
+
+    setUser(null);
+    setRole(null);
+
+    toast.success("Logged out successfully!");
+    navigate("/login");
+  };
+
+  // ✅ Role-based links
   const getLinks = () => {
     const normalizedRole = role?.replace(/^ROLE_/, "").toUpperCase();
 
@@ -33,7 +49,6 @@ export default function Navbar() {
 
   const activeClass =
     "text-white font-semibold bg-white/20 px-3 py-1.5 rounded-lg shadow-md transition";
-
   const normalClass =
     "text-white/80 hover:text-white hover:bg-white/10 px-3 py-1.5 rounded-lg transition";
 
@@ -45,7 +60,7 @@ export default function Navbar() {
       className="fixed top-0 left-0 w-full z-50 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 shadow-md backdrop-blur-md"
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
-        {/* Logo */}
+        {/* ✅ Logo */}
         <Link
           to="/"
           className="text-2xl font-extrabold text-white tracking-wide hover:scale-105 transition"
@@ -53,7 +68,7 @@ export default function Navbar() {
           Tutenity
         </Link>
 
-        {/* Nav Links */}
+        {/* ✅ Navigation Links */}
         <div className="hidden md:flex items-center gap-3">
           {getLinks().map((link) => (
             <Link
@@ -68,7 +83,7 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Role Badge + Logout */}
+        {/* ✅ Role Badge + Logout */}
         <div className="flex items-center gap-3">
           {role && (
             <span className="bg-white/20 text-white text-xs px-3 py-1 rounded-full uppercase tracking-wide shadow-sm">
@@ -80,10 +95,7 @@ export default function Navbar() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.9 }}
-              onClick={() => {
-                logout();
-                navigate("/login");
-              }}
+              onClick={handleLogout}
               className="bg-red-500 text-white px-4 py-1.5 rounded-lg hover:bg-red-600 transition"
             >
               Logout
