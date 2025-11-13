@@ -1,191 +1,172 @@
+// src/pages/Register.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api";
 import { motion } from "framer-motion";
-import AuthContainer from "../components/AuthContainer";
+import api from "../api";
 import toast from "react-hot-toast";
+import AuthContainer from "../components/AuthContainer";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function Register() {
+  const navigate = useNavigate();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
   const [role, setRole] = useState("STUDENT");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    if (!name.trim()) {
-      setError("Name is required.");
-      setLoading(false);
-      return;
-    }
-
     try {
-      const res = await api.post("/auth/register", { name, email, password, role });
-      console.log("✅ Registration successful:", res.data);
-
-      toast.success("Account created successfully! Please log in to continue.", {
-        style: {
-          background: "#1E1B4B",
-          color: "#fff",
-          border: "1px solid #6366F1",
-        },
-        iconTheme: {
-          primary: "#8B5CF6",
-          secondary: "#1E1B4B",
-        },
-      });
-
-      setTimeout(() => navigate("/login", { replace: true }), 1000);
+      await api.post("/auth/register", { name, email, password, role });
+      toast.success("Account created successfully!");
+      navigate("/login");
     } catch (err) {
-      console.error("❌ Registration failed:", err.response?.data || err.message);
-      const msg = err.response?.data?.message || "Registration failed. Please try again.";
+      const msg = err?.response?.data?.message || "Registration failed.";
       setError(msg);
-
-      toast.error(msg, {
-        style: {
-          background: "#451a75",
-          color: "#fff",
-          border: "1px solid #E11D48",
-        },
-      });
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row items-center justify-center bg-gradient-to-br from-[#0B0F19] via-[#1E1B4B] to-[#312E81] text-white overflow-hidden">
-      {/* Left panel with quote */}
+    <div className="min-h-screen w-full flex flex-col md:flex-row items-center justify-center bg-white dark:bg-[#0A0C1D] text-gray-900 dark:text-gray-100">
+
+      {/* LEFT SIDE */}
       <motion.div
         initial={{ opacity: 0, x: -40 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.9 }}
+        transition={{ duration: 0.8 }}
         className="hidden md:flex flex-col justify-center w-1/2 px-12 space-y-8"
       >
-        <h1 className="text-5xl font-extrabold mb-4">
-          Join <span className="text-indigo-400">TuterNity</span>
+        <h1 className="text-5xl font-extrabold leading-tight">
+          Join{" "}
+          <span className="bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">
+            TuterNity
+          </span>
         </h1>
-        <p className="text-lg text-white/80 max-w-md">
-          A community of learners and mentors shaping the future together.
-        </p>
 
-        <div className="mt-8 bg-white/10 p-6 rounded-2xl backdrop-blur-xl border border-white/20 shadow-lg max-w-md">
-          <h2 className="text-xl font-semibold mb-3 text-indigo-300">
-            Did you know? 💬
-          </h2>
-          <p className="text-white/90 italic text-sm leading-relaxed">
-            “The expert in anything was once a beginner.”
-          </p>
-        </div>
+        <p className="text-lg max-w-md leading-relaxed text-gray-600 dark:text-gray-300">
+          A community of learners and mentors shaping the future.
+        </p>
       </motion.div>
 
-      {/* Right Panel – Registration Form */}
+      {/* RIGHT SIDE */}
       <motion.div
         initial={{ opacity: 0, x: 40 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.9 }}
+        transition={{ duration: 0.8 }}
         className="flex justify-center items-center w-full md:w-1/2 p-6"
       >
         <AuthContainer>
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
-            className="bg-white/10 backdrop-blur-2xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.25)] p-10 rounded-3xl text-white w-full max-w-md"
-          >
-            <div className="text-center mb-8">
-              <h1 className="text-4xl font-extrabold drop-shadow-lg">TuterNity</h1>
-              <p className="text-sm text-white/70 mt-1">Learn • Grow • Connect</p>
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-extrabold bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">
+              TuterNity
+            </h1>
+            <p className="text-sm mt-1 text-gray-600 dark:text-gray-400">
+              Learn • Grow • Connect
+            </p>
+          </div>
+
+          <h2 className="text-3xl font-bold text-center mb-6">Create Account ✨</h2>
+
+          {error && (
+            <p className="bg-red-500/10 border border-red-400 text-red-600 dark:text-red-300 p-2 rounded text-center mb-4">
+              {error}
+            </p>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            {/* NAME */}
+            <div className="mb-4">
+              <label className="text-sm font-medium">Full Name</label>
+              <input
+                type="text"
+                value={name}
+                placeholder="Enter your full name"
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="w-full mt-1 p-3 rounded-xl bg-gray-100 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 outline-none"
+              />
             </div>
 
-            <h2 className="text-3xl font-bold text-center mb-6">Create Account ✨</h2>
+            {/* EMAIL */}
+            <div className="mb-4">
+              <label className="text-sm font-medium">Email</label>
+              <input
+                type="email"
+                value={email}
+                placeholder="you@example.com"
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full mt-1 p-3 rounded-xl bg-gray-100 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 outline-none"
+              />
+            </div>
 
-            {error && (
-              <p className="bg-red-500/30 border border-red-400 text-red-100 text-center p-2 rounded mb-3">
-                {error}
-              </p>
-            )}
-
-            <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label className="text-sm font-medium tracking-wide">Full Name</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Enter your name"
-                  className="w-full mt-1 bg-white/20 text-white placeholder-white/70 p-3 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400 focus:bg-white/30 transition"
-                  required
-                />
-              </div>
-
-              <div className="mb-4">
-                <label className="text-sm font-medium tracking-wide">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
-                  className="w-full mt-1 bg-white/20 text-white placeholder-white/70 p-3 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400 focus:bg-white/30 transition"
-                  required
-                />
-              </div>
-
-              <div className="mb-4">
-                <label className="text-sm font-medium tracking-wide">Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className="w-full mt-1 bg-white/20 text-white placeholder-white/70 p-3 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400 focus:bg-white/30 transition"
-                  required
-                />
-              </div>
-
-              <div className="mb-6">
-                <label className="text-sm font-medium tracking-wide">Role</label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full mt-1 bg-white/20 text-white p-3 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400 focus:bg-white/30 transition"
-                >
-                  <option value="STUDENT" className="bg-indigo-700">Student</option>
-                  <option value="TEACHER" className="bg-indigo-700">Teacher</option>
-                </select>
-              </div>
-
-              <motion.button
-                whileHover={{
-                  scale: 1.05,
-                  boxShadow: "0px 0px 15px rgba(99,102,241,0.6)",
-                }}
-                whileTap={{ scale: 0.95 }}
-                disabled={loading}
-                type="submit"
-                className="w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-600 font-bold rounded-xl hover:from-indigo-400 hover:to-purple-500 transition shadow-lg shadow-indigo-500/30"
-              >
-                {loading ? "Registering..." : "Register"}
-              </motion.button>
-            </form>
-
-            <p className="text-center text-sm text-white/80 mt-5">
-              Already have an account?{" "}
+            {/* PASSWORD + SHOW/HIDE */}
+            <div className="mb-4 relative">
+              <label className="text-sm font-medium">Password</label>
+              <input
+                type={showPass ? "text" : "password"}
+                value={password}
+                placeholder="Create a strong password"
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full mt-1 p-3 pr-12 rounded-xl bg-gray-100 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 outline-none"
+              />
               <button
                 type="button"
-                onClick={() => navigate("/login")}
-                className="text-indigo-300 font-semibold underline hover:text-indigo-200"
+                onClick={() => setShowPass(!showPass)}
+                className="absolute right-4 top-10 text-gray-600 dark:text-gray-300"
               >
-                Login
+                {showPass ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
-            </p>
-          </motion.div>
+            </div>
+
+            {/* ROLE */}
+            <div className="mb-6">
+              <label className="text-sm font-medium">Role</label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-full mt-1 p-3 rounded-xl bg-gray-100 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 outline-none"
+              >
+                <option value="STUDENT">Student</option>
+                <option value="TEACHER">Teacher</option>
+              </select>
+            </div>
+
+            {/* SUBMIT */}
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              disabled={loading}
+              type="submit"
+              className={`w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl font-semibold transition ${
+                loading ? "opacity-70 cursor-not-allowed" : ""
+              }`}
+            >
+              {loading ? "Registering..." : "Register"}
+            </motion.button>
+          </form>
+
+          {/* FOOTER */}
+          <p className="text-center text-sm mt-5 text-gray-600 dark:text-gray-300">
+            Already have an account?{" "}
+            <button
+              onClick={() => navigate("/login")}
+              className="text-indigo-600 dark:text-indigo-400 underline font-semibold"
+            >
+              Login
+            </button>
+          </p>
         </AuthContainer>
       </motion.div>
     </div>

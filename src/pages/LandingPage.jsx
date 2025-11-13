@@ -50,18 +50,28 @@ export default function LandingPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-scroll testimonials
+  // ✅ Safe infinite scroll animation
   useEffect(() => {
+    let isMounted = true;
+
     const loopScroll = async () => {
-      while (true) {
+      while (isMounted) {
         await controls.start({
           x: "-50%",
-          transition: { duration: 15, ease: "linear" },
+          transition: { duration: 20, ease: "linear" },
         });
-        controls.set({ x: "0%" });
+
+        if (isMounted) {
+          controls.set({ x: "0%" });
+        }
       }
     };
+
     loopScroll();
+
+    return () => {
+      isMounted = false;
+    };
   }, [controls]);
 
   const scrollToFeatures = () =>
@@ -256,58 +266,74 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Testimonials Auto-Scroll */}
-      <section className="py-20 px-6 bg-[#f5f9ff] dark:bg-[#0f172a] border-t border-gray-100 dark:border-gray-700 overflow-hidden">
-        <div className="max-w-6xl mx-auto text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            What Our <span className="text-indigo-600">Users Say</span>
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 text-lg max-w-2xl mx-auto">
-            Hear from students and mentors who love TuterNity.
-          </p>
-        </div>
+    {/* Testimonials Section */}
+<section className="py-20 px-6 bg-[#f5f9ff] dark:bg-[#0f172a] border-t border-gray-100 dark:border-gray-700 overflow-hidden">
+  <motion.div
+    initial={{ opacity: 0, y: 30 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.8, ease: "easeOut" }}
+    viewport={{ once: true, amount: 0.3 }}
+    className="max-w-6xl mx-auto text-center mb-12"
+  >
+    <h2 className="text-3xl md:text-4xl font-bold mb-4">
+      What Our <span className="text-indigo-600">Users Say</span>
+    </h2>
+    <p className="text-gray-600 dark:text-gray-400 text-lg max-w-2xl mx-auto">
+      Hear from students and mentors who love TuterNity.
+    </p>
+  </motion.div>
 
-        <motion.div animate={controls} className="flex gap-6 w-[200%] px-4">
-          {[...Array(2)].flatMap(() =>
-            [
-              {
-                name: "Aarav Sharma",
-                role: "Student",
-                quote: "TuterNity helped me find a tutor who made learning fun again!",
-              },
-              {
-                name: "Priya Mehta",
-                role: "Mentor",
-                quote: "I love teaching on TuterNity — easy scheduling and motivated learners!",
-              },
-              {
-                name: "Rahul Verma",
-                role: "Student",
-                quote: "Smooth booking and tracking system. Highly recommended!",
-              },
-              {
-                name: "Sneha Kapoor",
-                role: "Tutor",
-                quote: "TuterNity gives me the freedom to teach anywhere while staying organized.",
-              },
-            ].map((user, idx) => (
-              <motion.div
-                key={`${user.name}-${idx}`}
-                whileHover={{ scale: 1.05 }}
-                className="min-w-[300px] md:min-w-[350px] rounded-2xl p-8 bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700"
-              >
-                <p className="italic mb-6 text-gray-700 dark:text-gray-300">
-                  “{user.quote}”
-                </p>
-                <h4 className="text-lg font-semibold">{user.name}</h4>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {user.role}
-                </p>
-              </motion.div>
-            ))
-          )}
+  <motion.div
+    animate={controls}
+    className="flex gap-6 w-[200%] px-4"
+    initial={{ opacity: 0 }}
+    whileInView={{ opacity: 1 }}
+    transition={{ duration: 1 }}
+  >
+    {[...Array(2)].flatMap(() =>
+      [
+        {
+          name: "Aarav Sharma",
+          role: "Student",
+          quote: "TuterNity helped me find a tutor who made learning fun again!",
+        },
+        {
+          name: "Priya Mehta",
+          role: "Mentor",
+          quote: "I love teaching on TuterNity — easy scheduling and motivated learners!",
+        },
+        {
+          name: "Rahul Verma",
+          role: "Student",
+          quote: "Smooth booking and tracking system. Highly recommended!",
+        },
+        {
+          name: "Sneha Kapoor",
+          role: "Tutor",
+          quote: "TuterNity gives me the freedom to teach anywhere while staying organized.",
+        },
+      ].map((user, idx) => (
+        <motion.div
+          key={`${user.name}-${idx}`}
+          whileHover={{ scale: 1.05 }}
+          className="min-w-[300px] md:min-w-[350px] rounded-2xl p-8 bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 transition-transform duration-300"
+        >
+          <p className="italic mb-6 text-[1.05rem] text-gray-800 dark:text-gray-200 leading-relaxed tracking-wide">
+            “{user.quote}”
+          </p>
+          <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+            {user.name}
+          </h4>
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">
+            {user.role}
+          </p>
         </motion.div>
-      </section>
+      ))
+    )}
+  </motion.div>
+</section>
+
+
 
       {/* Quote Rotator */}
       <motion.div

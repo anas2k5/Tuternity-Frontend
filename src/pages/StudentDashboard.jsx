@@ -12,7 +12,6 @@ import {
   Calendar,
   Clock,
   CheckCircle,
-  AlertCircle,
   XCircle,
   Search,
   Edit3,
@@ -21,39 +20,98 @@ import {
 export default function StudentDashboard() {
   const [latestBooking, setLatestBooking] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [allBookings, setAllBookings] = useState([]);
+  const [stats, setStats] = useState({
+    upcoming: 0,
+    completed: 0,
+    totalHours: 0,
+  });
+
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // -----------------------------------------------------
+  // 🎯 Format time and duration
+  // -----------------------------------------------------
+  const formatTimeRange = (b) => {
+    if (!b) return "-";
+
+    const s = b.startTime ?? b.timeSlot ?? null;
+    const e = b.endTime ?? null;
+
+    if (s && e) return `${String(s)} - ${String(e)}`;
+    if (b.timeSlot && typeof b.timeSlot === "string") return b.timeSlot;
+
+    return "-";
+  };
+
+  const calculateDurationHours = (b) => {
+    if (!b?.startTime || !b?.endTime) return 0;
+
+    const start = new Date(`2000-01-01T${b.startTime}`);
+    const end = new Date(`2000-01-01T${b.endTime}`);
+
+    const diffMs = end - start;
+    if (diffMs <= 0) return 0;
+
+    return diffMs / (1000 * 60 * 60); // Hours
+  };
+
+  // -----------------------------------------------------
+  // 📌 Fetch Student Profile
+  // -----------------------------------------------------
   const fetchProfile = async () => {
     try {
       const res = await api.get("/students/me");
       setProfile(res.data);
     } catch (error) {
-      console.error("❌ Failed to fetch student profile:", error);
       toast.error("Failed to load student profile.");
     }
   };
 
-  const fetchLatestBooking = async () => {
+  // -----------------------------------------------------
+  // 📌 Fetch Bookings + Stats
+  // -----------------------------------------------------
+  const fetchBookingsAndStats = async () => {
     try {
       const localProfile = getJSON("profile");
       const studentId = localProfile?.id;
-      if (!studentId) {
-        setLoading(false);
-        return;
-      }
+
+      if (!studentId) return setLoading(false);
 
       const res = await api.get(`/bookings/student/${studentId}`);
       const bookings = res.data || [];
+      setAllBookings(bookings);
+
+      // Latest booking
       if (bookings.length > 0) {
         const sorted = bookings.sort(
           (a, b) => new Date(b.date) - new Date(a.date)
         );
         setLatestBooking(sorted[0]);
       }
+
+      // Stats
+      const now = new Date();
+
+      const upcoming = bookings.filter((b) => {
+        const d = new Date(b.date);
+        return d >= now && b.status !== "CANCELLED";
+      }).length;
+
+      const completed = bookings.filter((b) => b.status === "COMPLETED").length;
+
+      const totalHours = bookings
+        .filter((b) => b.status === "COMPLETED")
+        .reduce((sum, b) => sum + calculateDurationHours(b), 0);
+
+      setStats({
+        upcoming,
+        completed,
+        totalHours: totalHours.toFixed(1),
+      });
     } catch (error) {
-      console.error("❌ Failed to fetch latest booking:", error);
-      toast.error("Failed to fetch latest booking.");
+      toast.error("Failed to fetch bookings.");
     } finally {
       setLoading(false);
     }
@@ -61,25 +119,48 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     fetchProfile();
-    fetchLatestBooking();
+    fetchBookingsAndStats();
   }, []);
 
+  // -----------------------------------------------------
+  // MAIN UI
+  // -----------------------------------------------------
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-700 text-white">
+    <div
+      className="
+        min-h-screen 
+        bg-landing-light dark:bg-landing-dark 
+        transition-colors duration-500 
+        text-gray-900 dark:text-gray-100
+      "
+    >
       <Navbar />
 
-      <div className="pt-24 px-6 max-w-5xl mx-auto">
-        {/* ✅ Student Welcome Section */}
+      <div className="pt-24 px-6 max-w-6xl mx-auto space-y-10">
+
+        {/* --------------------------------------------------
+            WELCOME CARD
+        -------------------------------------------------- */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg border border-white/20 p-6 mb-8"
+          className="
+            rounded-2xl p-6 shadow-lg 
+            bg-white/80 dark:bg-white/5
+            border border-gray-200 dark:border-white/10 
+            backdrop-blur-xl
+          "
         >
-          <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
+          <h1 className="text-3xl font-bold mb-2">
             🎓 Welcome, {profile?.user?.name || "Student"}!
           </h1>
-          <div className="text-white/90 space-y-1">
+
+          <p className="text-gray-600 dark:text-gray-300 mb-4">
+            Here’s a quick summary of your learning journey.
+          </p>
+
+          <div className="space-y-2">
             {profile?.educationLevel && (
               <p className="flex items-center gap-2">
                 <BookOpen size={18} /> {profile.educationLevel}
@@ -98,95 +179,135 @@ export default function StudentDashboard() {
           </div>
         </motion.div>
 
-        {/* ✅ Latest Booking Section */}
+        {/* --------------------------------------------------
+            STATS CARDS
+        -------------------------------------------------- */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          transition={{ duration: 0.6 }}
+          className="grid grid-cols-1 sm:grid-cols-3 gap-5"
         >
+          {/* UPCOMING */}
+          <div className="p-5 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 border border-indigo-300/30 dark:border-indigo-300/10 shadow-md backdrop-blur-xl">
+            <p className="text-lg font-semibold">Upcoming Sessions</p>
+            <h2 className="text-3xl font-bold mt-2">{stats.upcoming}</h2>
+          </div>
+
+          {/* COMPLETED */}
+          <div className="p-5 rounded-xl bg-green-500/10 dark:bg-green-500/20 border border-green-300/30 dark:border-green-300/10 shadow-md backdrop-blur-xl">
+            <p className="text-lg font-semibold">Completed Sessions</p>
+            <h2 className="text-3xl font-bold mt-2">{stats.completed}</h2>
+          </div>
+
+          {/* HOURS */}
+          <div className="p-5 rounded-xl bg-purple-500/10 dark:bg-purple-500/20 border border-purple-300/30 dark:border-purple-300/10 shadow-md backdrop-blur-xl">
+            <p className="text-lg font-semibold">Total Hours Studied</p>
+            <h2 className="text-3xl font-bold mt-2">{stats.totalHours}h</h2>
+          </div>
+        </motion.div>
+
+        {/* --------------------------------------------------
+            LATEST BOOKING
+        -------------------------------------------------- */}
+        <motion.div
+          initial={{ opacity: 0, y: 25 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7 }}
+          className="
+            rounded-2xl p-6 shadow-lg 
+            bg-white/80 dark:bg-white/5
+            border border-gray-200 dark:border-white/10 
+            backdrop-blur-xl
+          "
+        >
+          <h2 className="text-2xl font-semibold flex items-center gap-2 mb-4">
+            <Calendar size={22} /> Latest Booking
+          </h2>
+
           {loading ? (
-            <p className="text-center text-white/80">
-              Loading your latest booking...
+            <p className="text-gray-600 dark:text-gray-300">
+              Loading your latest booking…
             </p>
           ) : latestBooking ? (
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg border border-white/20 p-6">
-              <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-                <Calendar size={22} /> Latest Booking Summary
-              </h2>
-              <div className="text-white/90 space-y-1">
-                <p>
-                  <strong>Teacher:</strong> {latestBooking.teacherName}
-                </p>
-                <p>
-                  <strong>Subject:</strong> {latestBooking.subject}
-                </p>
-                <p>
-                  <strong>Date:</strong> {latestBooking.date || "-"}
-                </p>
-                <p>
-                  <strong>Time Slot:</strong> {latestBooking.timeSlot || "-"}
-                </p>
-              </div>
+            <>
+              <p><strong>Teacher:</strong> {latestBooking.teacherName}</p>
+              <p><strong>Subject:</strong> {latestBooking.subject}</p>
+              <p><strong>Date:</strong> {latestBooking.date}</p>
+              <p><strong>Time:</strong> {formatTimeRange(latestBooking)}</p>
 
-              <div className="mt-4">
+              {/* STATUS BADGE */}
+              <div className="mt-3">
                 <span
-                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
-                    latestBooking.status === "PAID"
-                      ? "bg-green-500/80 text-white"
-                      : latestBooking.status === "PENDING"
-                      ? "bg-yellow-500/80 text-white"
-                      : latestBooking.status?.includes("CANCELLED")
-                      ? "bg-gray-500/80 text-white"
-                      : "bg-blue-500/80 text-white"
-                  }`}
+                  className={`
+                    inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium
+                    ${
+                      latestBooking.status === "PAID"
+                        ? "bg-green-500/80 text-white"
+                        : latestBooking.status === "CONFIRMED"
+                        ? "bg-blue-500/80 text-white"
+                        : latestBooking.status === "COMPLETED"
+                        ? "bg-purple-500/80 text-white"
+                        : "bg-gray-500/80 text-white"
+                    }
+                  `}
                 >
                   {latestBooking.status === "PAID" && <CheckCircle size={16} />}
-                  {latestBooking.status === "PENDING" && <Clock size={16} />}
-                  {latestBooking.status?.includes("CANCELLED") && (
-                    <XCircle size={16} />
-                  )}
+                  {latestBooking.status === "CONFIRMED" && <Clock size={16} />}
+                  {latestBooking.status === "COMPLETED" && <CheckCircle size={16} />}
+                  {latestBooking.status === "CANCELLED" && <XCircle size={16} />}
                   {latestBooking.status}
                 </span>
               </div>
 
-              <div className="mt-6 flex flex-wrap gap-3">
+              <div className="mt-5 flex gap-3">
                 <button
                   onClick={() => navigate("/student/bookings")}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center gap-2"
                 >
                   <Calendar size={18} /> View All Bookings
                 </button>
+
                 <button
                   onClick={() => navigate("/student/find-tutors")}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2"
                 >
-                  <Search size={18} /> Find More Tutors
+                  <Search size={18} /> Find Tutors
                 </button>
               </div>
-            </div>
+            </>
           ) : (
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg border border-white/20 p-6 text-center">
-              <p className="text-white/80">You have no recent bookings yet.</p>
+            <div className="text-center">
+              <p className="text-gray-600 dark:text-gray-300">
+                No recent bookings found.
+              </p>
               <button
                 onClick={() => navigate("/student/find-tutors")}
                 className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2 mx-auto"
               >
-                <Search size={18} /> Find a Teacher
+                <Search size={18} /> Find a Tutor
               </button>
             </div>
           )}
         </motion.div>
 
-        {/* ✅ Profile Shortcut */}
+        {/* --------------------------------------------------
+            PROFILE BUTTON
+        -------------------------------------------------- */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="text-center mt-10"
+          transition={{ duration: 0.75 }}
+          className="text-center pb-10"
         >
           <button
             onClick={() => navigate("/student/profile")}
-            className="px-6 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition flex items-center gap-2 mx-auto"
+            className="
+              px-6 py-2 rounded-lg 
+              bg-purple-600 text-white 
+              hover:bg-purple-700 transition 
+              flex items-center gap-2 mx-auto
+            "
           >
             <Edit3 size={18} /> View / Edit My Profile
           </button>

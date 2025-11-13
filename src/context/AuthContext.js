@@ -1,37 +1,48 @@
 // src/context/AuthContext.js
-import { createContext, useState, useEffect, useContext } from "react";
-import { getJSON, setJSON, remove } from "../utils/storage";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { getJSON, setJSON, remove as removeFromStorage } from "../utils/storage";
 
 export const AuthContext = createContext();
 
 export default function AuthProvider({ children }) {
-  const [user, setUser] = useState(getJSON("profile"));
-  const [token, setToken] = useState(localStorage.getItem("token"));
-  const [role, setRole] = useState(localStorage.getItem("role"));
+  const [user, setUser] = useState(getJSON("profile") || null);
+  const [accessToken, setAccessToken] = useState(localStorage.getItem("accessToken") || null);
+  const [refreshToken, setRefreshToken] = useState(localStorage.getItem("refreshToken") || null);
+  const [role, setRole] = useState(localStorage.getItem("role") || null);
   const [loading, setLoading] = useState(false);
 
-  // ✅ Save to localStorage whenever state changes
   useEffect(() => {
     if (user) setJSON("profile", user);
-    if (token) localStorage.setItem("token", token);
-    if (role) localStorage.setItem("role", role);
-  }, [user, token, role]);
+    else removeFromStorage("profile");
 
-  // ✅ Logout clears everything
+    if (accessToken) localStorage.setItem("accessToken", accessToken);
+    else localStorage.removeItem("accessToken");
+
+    if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+    else localStorage.removeItem("refreshToken");
+
+    if (role) localStorage.setItem("role", role);
+    else localStorage.removeItem("role");
+  }, [user, accessToken, refreshToken, role]);
+
   const logout = () => {
-    remove("profile");
-    remove("token");
-    remove("role");
+    removeFromStorage("profile");
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("role");
     setUser(null);
-    setToken(null);
+    setAccessToken(null);
+    setRefreshToken(null);
     setRole(null);
   };
 
   const value = {
     user,
     setUser,
-    token,
-    setToken,
+    accessToken,
+    setAccessToken,
+    refreshToken,
+    setRefreshToken,
     role,
     setRole,
     logout,
@@ -42,9 +53,8 @@ export default function AuthProvider({ children }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-// ✅ Custom hook for accessing Auth context easily
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within an AuthProvider");
-  return context;
-};
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be inside AuthProvider");
+  return ctx;
+}

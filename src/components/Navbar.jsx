@@ -1,18 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { ThemeContext } from "../context/ThemeContext";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Moon, Sun } from "lucide-react";
 
 export default function Navbar() {
   const { user, role, setUser, setRole } = useAuth();
+  const { theme, toggleTheme } = useContext(ThemeContext);
   const navigate = useNavigate();
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // 🔥 Scroll effect for shadow
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
@@ -47,9 +48,10 @@ export default function Navbar() {
     } else if (normalizedRole === "ADMIN") {
       return [{ name: "Dashboard", path: "/admin" }];
     } else {
-      // Public navbar for landing page
       return [
         { name: "Home", path: "/" },
+        { name: "About", path: "/#about" },
+        { name: "Features", path: "/#features" },
         { name: "Login", path: "/login" },
         { name: "Sign Up", path: "/register" },
       ];
@@ -84,7 +86,7 @@ export default function Navbar() {
       }`}
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
-        {/* ✅ Logo */}
+        {/* Logo */}
         <Link
           to="/"
           className={`text-2xl font-extrabold tracking-wide ${
@@ -94,7 +96,7 @@ export default function Navbar() {
           TuterNity
         </Link>
 
-        {/* ✅ Desktop Navigation */}
+        {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-5">
           {getLinks().map((link) => (
             <Link
@@ -107,6 +109,19 @@ export default function Navbar() {
               {link.name}
             </Link>
           ))}
+
+          {/* Theme Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            className={`ml-3 p-2 rounded-full transition ${
+              theme === "dark"
+                ? "bg-gray-700 hover:bg-gray-600 text-yellow-400"
+                : "bg-gray-200 hover:bg-gray-300 text-indigo-600"
+            }`}
+            aria-label="Toggle Theme"
+          >
+            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
 
           {user && (
             <motion.button
@@ -124,7 +139,7 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* ✅ Mobile Menu Button */}
+        {/* Mobile Menu Button */}
         <button
           onClick={() => setMenuOpen(!menuOpen)}
           className="md:hidden text-gray-700"
@@ -133,7 +148,7 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* ✅ Mobile Menu Drawer */}
+      {/* Mobile Menu Drawer */}
       {menuOpen && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -157,6 +172,17 @@ export default function Navbar() {
               {link.name}
             </Link>
           ))}
+
+          <button
+            onClick={toggleTheme}
+            className={`mt-2 p-2 rounded-full ${
+              theme === "dark"
+                ? "bg-gray-700 text-yellow-400"
+                : "bg-gray-200 text-indigo-600"
+            }`}
+          >
+            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
 
           {user && (
             <button

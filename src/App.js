@@ -1,10 +1,18 @@
+// src/App.js
 import "./App.css";
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+} from "react-router-dom";
+
 import { AnimatePresence } from "framer-motion";
 import { Toaster } from "react-hot-toast";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import AuthProvider from "./context/AuthContext";
+
 import ProtectedRoute from "./components/ProtectedRoute";
 import AnimatedBackground from "./components/AnimatedBackground";
 import PageTransition from "./components/PageTransition";
@@ -28,6 +36,12 @@ import StudentPayments from "./pages/StudentPayments";
 import StudentProfile from "./pages/StudentProfile";
 import LandingPage from "./pages/LandingPage";
 
+import { ThemeContext } from "./context/ThemeContext";
+import { useContext } from "react";
+
+// -------------------------------------------
+// Scroll Restoration on Route Change
+// -------------------------------------------
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -36,166 +50,248 @@ function ScrollToTop() {
   return null;
 }
 
+// -------------------------------------------
+// App Content — Theme Aware Wrapper
+// -------------------------------------------
 function AppContent() {
   const location = useLocation();
+  const { theme } = useContext(ThemeContext);
+
   const [loading, setLoading] = useState(true);
-  const [isDark, setIsDark] = useState(localStorage.getItem("theme") === "dark");
 
   useEffect(() => {
     setLoading(true);
-    const timer = setTimeout(() => setLoading(false), 700);
-    return () => clearTimeout(timer);
+    const t = setTimeout(() => setLoading(false), 400);
+    return () => clearTimeout(t);
   }, [location]);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", isDark);
-    document.body.classList.toggle("dark", isDark);
-    localStorage.setItem("theme", isDark ? "dark" : "light");
-  }, [isDark]);
 
   if (loading) return <Loader />;
 
   return (
     <div
-      className={`min-h-screen w-full transition-colors duration-700 ${
-        isDark
-          ? "bg-[#0f172a] text-gray-100 dark"
-          : "bg-[#f5f8ff] text-[#1E1E2F]"
-      }`}
+      className={`
+        min-h-screen w-full 
+        bg-white dark:bg-[#0f172a] 
+        text-gray-900 dark:text-gray-100
+        transition-colors duration-500
+      `}
     >
+      {/* GLOBAL TOASTER */}
       <Toaster
         position="top-center"
-        reverseOrder={false}
         toastOptions={{
           duration: 3000,
           style: {
-            background: isDark
-              ? "linear-gradient(135deg, #1E1B4B 0%, #312E81 100%)"
-              : "#fff",
-            color: isDark ? "#fff" : "#1E1E2F",
-            borderRadius: "12px",
-            border: "1px solid rgba(255,255,255,0.1)",
-            boxShadow: "0 6px 25px rgba(0,0,0,0.35)",
-            fontSize: "15px",
-            fontWeight: 500,
+            background: "linear-gradient(135deg,#1E1B4B 0%,#312E81 100%)",
+            color: "#E0E7FF",
+            borderRadius: 12,
+            border: "1px solid rgba(99,102,241,0.35)",
+            boxShadow: "0 6px 25px rgba(79,70,229,0.35)",
+            fontSize: 15,
           },
         }}
       />
 
+      {/* PAGE TRANSITIONS */}
       <AnimatePresence mode="wait">
-        <PageTransition key={location.pathname}>
-          <Routes location={location} key={location.pathname}>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route
-              path="/teacher"
-              element={
+        <Routes location={location} key={location.pathname}>
+
+          {/* PUBLIC ROUTES */}
+          <Route
+            path="/"
+            element={
+              <PageTransition>
+                <LandingPage />
+              </PageTransition>
+            }
+          />
+
+          <Route
+            path="/login"
+            element={
+              <PageTransition>
+                <Login />
+              </PageTransition>
+            }
+          />
+
+          <Route
+            path="/register"
+            element={
+              <PageTransition>
+                <Register />
+              </PageTransition>
+            }
+          />
+
+          {/* TEACHER ROUTES */}
+          <Route
+            path="/teacher"
+            element={
+              <PageTransition>
                 <ProtectedRoute role="TEACHER">
                   <TeacherDashboard />
                 </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/teacher/profile"
-              element={
+              </PageTransition>
+            }
+          />
+
+          <Route
+            path="/teacher/profile"
+            element={
+              <PageTransition>
                 <ProtectedRoute role="TEACHER">
                   <ManageTeacherProfile />
                 </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/teacher/availability"
-              element={
+              </PageTransition>
+            }
+          />
+
+          <Route
+            path="/teacher/availability"
+            element={
+              <PageTransition>
                 <ProtectedRoute role="TEACHER">
                   <ManageTeacherAvailability />
                 </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/teacher/bookings"
-              element={
+              </PageTransition>
+            }
+          />
+
+          <Route
+            path="/teacher/bookings"
+            element={
+              <PageTransition>
                 <ProtectedRoute role="TEACHER">
                   <TeacherBookings />
                 </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/student"
-              element={
+              </PageTransition>
+            }
+          />
+
+          {/* STUDENT ROUTES */}
+          <Route
+            path="/student"
+            element={
+              <PageTransition>
                 <ProtectedRoute role="STUDENT">
                   <StudentDashboard />
                 </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/student/find-tutors"
-              element={
+              </PageTransition>
+            }
+          />
+
+          <Route
+            path="/student/find-tutors"
+            element={
+              <PageTransition>
                 <ProtectedRoute role="STUDENT">
                   <BrowseTeachers />
                 </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/student/bookings"
-              element={
+              </PageTransition>
+            }
+          />
+
+          <Route
+            path="/student/bookings"
+            element={
+              <PageTransition>
                 <ProtectedRoute role="STUDENT">
                   <StudentBookings />
                 </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/student/payments"
-              element={
+              </PageTransition>
+            }
+          />
+
+          <Route
+            path="/student/payments"
+            element={
+              <PageTransition>
                 <ProtectedRoute role="STUDENT">
                   <StudentPayments />
                 </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/student/profile"
-              element={
+              </PageTransition>
+            }
+          />
+
+          <Route
+            path="/student/profile"
+            element={
+              <PageTransition>
                 <ProtectedRoute role="STUDENT">
                   <StudentProfile />
                 </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/teacher/:id"
-              element={
+              </PageTransition>
+            }
+          />
+
+          <Route
+            path="/teacher/:id"
+            element={
+              <PageTransition>
                 <ProtectedRoute role="STUDENT">
                   <TeacherDetails />
                 </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin"
-              element={
+              </PageTransition>
+            }
+          />
+
+          {/* ADMIN */}
+          <Route
+            path="/admin"
+            element={
+              <PageTransition>
                 <ProtectedRoute role="ADMIN">
                   <AdminDashboard />
                 </ProtectedRoute>
-              }
-            />
-            <Route path="/not-authorized" element={<NotAuthorized />} />
-            <Route path="/paymentSuccess" element={<PaymentSuccess />} />
-            <Route path="/paymentCancel" element={<PaymentCancel />} />
-          </Routes>
-        </PageTransition>
+              </PageTransition>
+            }
+          />
+
+          {/* MISC */}
+          <Route
+            path="/not-authorized"
+            element={
+              <PageTransition>
+                <NotAuthorized />
+              </PageTransition>
+            }
+          />
+
+          <Route
+            path="/paymentSuccess"
+            element={
+              <PageTransition>
+                <PaymentSuccess />
+              </PageTransition>
+            }
+          />
+
+          <Route
+            path="/paymentCancel"
+            element={
+              <PageTransition>
+                <PaymentCancel />
+              </PageTransition>
+            }
+          />
+        </Routes>
       </AnimatePresence>
     </div>
   );
 }
 
-function App() {
+// -------------------------------------------
+// Root with Providers
+// -------------------------------------------
+export default function App() {
   return (
-    <Router>
-      <AuthProvider>
+    <AuthProvider>
+      <Router>
         <AnimatedBackground />
         <ScrollToTop />
         <AppContent />
-      </AuthProvider>
-    </Router>
+      </Router>
+    </AuthProvider>
   );
 }
-
-export default App;
