@@ -20,9 +20,12 @@ export default function StudentBookings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [processingPaymentId, setProcessingPaymentId] = useState(null);
-  const [joiningMeeting, setJoiningMeeting] = useState(null); // 🆕 for modal
+  const [joiningMeeting, setJoiningMeeting] = useState(null);
 
-  // ✅ Fetch student bookings
+  // NEW: Cancel modal state
+  const [cancelBookingId, setCancelBookingId] = useState(null);
+
+  // Fetch all bookings
   const fetchBookings = async () => {
     setLoading(true);
     setError("");
@@ -49,12 +52,18 @@ export default function StudentBookings() {
     fetchBookings();
   }, []);
 
-  // ✅ Cancel booking
-  const handleCancel = async (bookingId) => {
-    if (!window.confirm("Are you sure you want to cancel this booking?")) return;
+  // ------------------------------
+  // CANCEL BOOKING — NO ALERT POPUP
+  // ------------------------------
+  const handleCancel = (bookingId) => {
+    setCancelBookingId(bookingId);
+  };
+
+  const confirmCancelBooking = async () => {
     try {
-      await api.delete(`/bookings/${bookingId}`);
+      await api.delete(`/bookings/${cancelBookingId}`);
       toast.success("Booking cancelled successfully.");
+      setCancelBookingId(null);
       fetchBookings();
     } catch (err) {
       console.error("❌ Cancellation failed:", err);
@@ -62,7 +71,7 @@ export default function StudentBookings() {
     }
   };
 
-  // ✅ Stripe payment
+  // Stripe payment
   const handlePayment = async (bookingId) => {
     setProcessingPaymentId(bookingId);
     try {
@@ -82,13 +91,13 @@ export default function StudentBookings() {
     }
   };
 
-  // ✅ Copy meeting link
+  // Copy meeting link
   const handleCopyLink = (link) => {
     navigator.clipboard.writeText(link);
     toast.success("Meeting link copied!");
   };
 
-  // ✅ Confirm and join meeting
+  // Join meeting popup
   const handleJoinMeeting = (link) => {
     setJoiningMeeting(link);
   };
@@ -102,22 +111,23 @@ export default function StudentBookings() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-700 text-white">
+    <div className="min-h-screen bg-landing-light dark:bg-landing-dark transition-colors duration-500">
       <Navbar />
 
       <div className="pt-24 px-6 max-w-6xl mx-auto">
-        <h1 className="text-3xl font-extrabold mb-8 text-center">
+        <h1 className="text-4xl font-extrabold mb-10 text-center text-gray-900 dark:text-white">
           My Bookings
         </h1>
 
+        {/* Loading / Error */}
         {loading ? (
-          <p className="text-center text-white/90 italic">
+          <p className="text-center text-gray-700 dark:text-gray-300 italic">
             Loading bookings...
           </p>
         ) : error ? (
-          <p className="text-red-200 text-center">{error}</p>
+          <p className="text-red-500 text-center">{error}</p>
         ) : bookings.length === 0 ? (
-          <p className="text-center text-white/80 italic">
+          <p className="text-center text-gray-700 dark:text-gray-300 italic">
             You have no bookings yet.
           </p>
         ) : (
@@ -127,28 +137,38 @@ export default function StudentBookings() {
                 key={b.id || i}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: i * 0.05 }}
-                className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg border border-white/20 p-5 flex flex-col justify-between hover:shadow-2xl hover:scale-[1.02] transition-all"
+                transition={{ duration: 0.25, delay: i * 0.05 }}
+                className="
+                  bg-white/70 dark:bg-white/10 
+                  backdrop-blur-xl border border-white/20 
+                  dark:border-white/10 
+                  shadow-lg rounded-2xl p-5 
+                  hover:shadow-2xl hover:scale-[1.01] 
+                  transition-all
+                "
               >
                 {/* Card Header */}
-                <div className="space-y-2">
-                  <h2 className="font-bold text-xl text-white truncate">
-                    {b.teacherName || "Teacher"}
+                <div className="space-y-1">
+                  <h2 className="font-bold text-xl text-gray-900 dark:text-white truncate">
+                    {b.teacherName}
                   </h2>
-                  <p className="text-white/90 text-sm">Subject: {b.subject}</p>
-                  <p className="text-white/90 text-sm">Skills: {b.skills}</p>
-                  <p className="text-white/90 text-sm flex items-center gap-1">
+                  <p className="text-gray-700 dark:text-gray-300 text-sm">
+                    Subject: {b.subject}
+                  </p>
+                  <p className="text-gray-700 dark:text-gray-300 text-sm">
+                    Skills: {b.skills}
+                  </p>
+                  <p className="text-gray-700 dark:text-gray-300 text-sm flex items-center gap-1">
                     <Calendar size={16} />
                     {b.date} {b.timeSlot && `| ${b.timeSlot}`}
                   </p>
                 </div>
 
-                {/* Status + Actions */}
-                <div className="mt-5 flex flex-col gap-3">
-                  {/* Status Badge */}
-                  <div className="flex justify-between items-center">
-                    <span
-                      className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium shadow ${
+                {/* Badge */}
+                <div className="mt-4">
+                  <span
+                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium shadow 
+                      ${
                         b.status === "PAID"
                           ? "bg-green-500/80 text-white"
                           : b.status === "PENDING"
@@ -157,104 +177,173 @@ export default function StudentBookings() {
                           ? "bg-blue-500/80 text-white"
                           : b.status === "COMPLETED"
                           ? "bg-purple-500/80 text-white"
-                          : b.status?.includes("CANCELLED")
-                          ? "bg-gray-500/60 text-white"
-                          : "bg-gray-400/40 text-white"
+                          : "bg-gray-500/60 text-white"
                       }`}
-                    >
-                      {b.status === "PAID" && <CheckCircle size={16} />}
-                      {b.status === "CONFIRMED" && <Clock size={16} />}
-                      {b.status === "PENDING" && <Clock size={16} />}
-                      {b.status === "COMPLETED" && <CheckCircle size={16} />}
-                      {b.status?.includes("CANCELLED") && <XCircle size={16} />}
-                      {b.status}
-                    </span>
-                  </div>
+                  >
+                    {b.status === "PAID" && <CheckCircle size={16} />}
+                    {b.status === "CONFIRMED" && <Clock size={16} />}
+                    {b.status === "PENDING" && <Clock size={16} />}
+                    {b.status === "COMPLETED" && <CheckCircle size={16} />}
+                    {b.status.includes("CANCELLED") && <XCircle size={16} />}
+                    {b.status}
+                  </span>
+                </div>
 
-                  {/* Payment + Cancel */}
-                  {(b.status === "PENDING" || b.status === "CONFIRMED") && (
-                    <div className="flex gap-2 justify-between">
-                      <button
-                        onClick={() => handlePayment(b.id)}
-                        disabled={processingPaymentId === b.id}
-                        className={`flex-1 flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-white transition-all ${
+                {/* Pay + Cancel Buttons */}
+                {(b.status === "PENDING" || b.status === "CONFIRMED") && (
+                  <div className="flex gap-3 mt-4">
+                    {/* PAY */}
+                    <button
+                      onClick={() => handlePayment(b.id)}
+                      disabled={processingPaymentId === b.id}
+                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg 
+                        text-white text-sm transition-all shadow 
+                        ${
                           processingPaymentId === b.id
-                            ? "bg-gray-400 cursor-not-allowed"
+                            ? "bg-gray-400"
                             : "bg-green-600 hover:bg-green-700"
                         }`}
-                      >
-                        <CreditCard size={16} />{" "}
-                        {processingPaymentId === b.id ? "Processing..." : "Pay"}
-                      </button>
+                    >
+                      <CreditCard size={16} />
+                      {processingPaymentId === b.id ? "Processing…" : "Pay"}
+                    </button>
 
-                      <button
-                        onClick={() => handleCancel(b.id)}
-                        disabled={processingPaymentId === b.id}
-                        className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-sm font-medium transition-all"
-                      >
-                        <XCircle size={16} /> Cancel
-                      </button>
-                    </div>
-                  )}
+                    {/* CANCEL */}
+                    <button
+                      onClick={() => handleCancel(b.id)}
+                      className="
+                        flex-1 flex items-center justify-center gap-2 px-4 py-2 
+                        rounded-lg bg-red-600 hover:bg-red-700 
+                        text-white text-sm transition-all shadow
+                      "
+                    >
+                      <XCircle size={16} /> Cancel
+                    </button>
+                  </div>
+                )}
 
-                  {/* Meeting Actions */}
-                  {b.meetingLink && (
-                    <div className="flex gap-3 justify-center items-center pt-2 border-t border-white/10 mt-2">
-                      <button
-                        onClick={() => handleJoinMeeting(b.meetingLink)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-1 shadow transition-all"
-                      >
-                        <LinkIcon size={16} /> Join
-                      </button>
-                      <button
-                        onClick={() => handleCopyLink(b.meetingLink)}
-                        className="text-white/80 hover:text-white flex items-center gap-1 text-sm"
-                      >
-                        <Copy size={14} /> Copy
-                      </button>
-                    </div>
-                  )}
-                </div>
+                {/* Join + Copy */}
+                {b.meetingLink && (
+                  <div className="mt-5 pt-3 border-t border-gray-300/30 dark:border-white/10 flex gap-3">
+                    <button
+                      onClick={() => handleJoinMeeting(b.meetingLink)}
+                      className="
+                        flex-1 bg-blue-600 hover:bg-blue-700 
+                        text-white px-4 py-2 rounded-lg 
+                        text-sm flex items-center justify-center gap-2 
+                        shadow transition-all
+                      "
+                    >
+                      <LinkIcon size={16} /> Join
+                    </button>
+
+                    <button
+                      onClick={() => handleCopyLink(b.meetingLink)}
+                      className="
+                        flex-1 px-4 py-2 rounded-lg text-sm flex items-center justify-center gap-2
+                        bg-gray-200 text-gray-900
+                        dark:bg-white/10 dark:text-white dark:border dark:border-white/10
+                        hover:bg-gray-300 dark:hover:bg-white/20
+                        transition-all shadow
+                      "
+                    >
+                      <Copy size={14} /> Copy
+                    </button>
+                  </div>
+                )}
               </motion.div>
             ))}
           </div>
         )}
       </div>
 
-      {/* 🧩 Modal for Confirming Join Meeting */}
+      {/* ------------------------------ */}
+      {/* JOIN MEETING POPUP */}
+      {/* ------------------------------ */}
       <AnimatePresence>
         {joiningMeeting && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              className="bg-white dark:bg-gray-900 text-gray-800 dark:text-white p-6 rounded-2xl w-96 shadow-xl"
+            >
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <LinkIcon size={18} className="text-blue-600" /> Join Meeting
+              </h2>
+
+              <p className="text-gray-600 dark:text-gray-300 text-sm mb-6">
+                You're about to join your session. Ready to continue?
+              </p>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setJoiningMeeting(null)}
+                  className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-sm"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={confirmJoinMeeting}
+                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm flex items-center gap-2"
+                >
+                  <ExternalLink size={14} /> Join Now
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ------------------------------ */}
+      {/* CANCEL BOOKING CONFIRMATION */}
+      {/* ------------------------------ */}
+      <AnimatePresence>
+        {cancelBookingId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white text-gray-800 rounded-2xl shadow-xl w-96 p-6 relative"
+              transition={{ duration: 0.25 }}
+              className="bg-white dark:bg-gray-900 text-gray-800 dark:text-white 
+                         p-7 rounded-2xl w-[380px] shadow-xl border border-white/20"
             >
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <LinkIcon size={18} className="text-blue-600" /> Join Meeting
+              <h2 className="text-xl font-bold mb-3 flex items-center gap-2">
+                <XCircle size={20} className="text-red-500" />
+                Cancel Booking?
               </h2>
-              <p className="text-gray-600 text-sm mb-5">
-                You’re about to join your scheduled meeting. Make sure your
-                internet connection and device are ready.
+
+              <p className="text-gray-600 dark:text-gray-300 text-sm mb-6">
+                Are you sure you want to cancel this session? This action cannot be undone.
               </p>
+
               <div className="flex justify-end gap-3">
                 <button
-                  onClick={() => setJoiningMeeting(null)}
-                  className="px-4 py-2 rounded-lg text-sm bg-gray-300 hover:bg-gray-400"
+                  onClick={() => setCancelBookingId(null)}
+                  className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-sm"
                 >
-                  Cancel
+                  Keep Booking
                 </button>
+
                 <button
-                  onClick={confirmJoinMeeting}
-                  className="px-4 py-2 rounded-lg text-sm bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1"
+                  onClick={confirmCancelBooking}
+                  className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 
+                             text-white text-sm shadow flex items-center gap-2"
                 >
-                  <ExternalLink size={14} /> Join Now
+                  <XCircle size={15} /> Cancel Now
                 </button>
               </div>
             </motion.div>

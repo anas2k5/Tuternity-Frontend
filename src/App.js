@@ -9,7 +9,7 @@ import {
 
 import { AnimatePresence } from "framer-motion";
 import { Toaster } from "react-hot-toast";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 
 import AuthProvider from "./context/AuthContext";
 
@@ -35,13 +35,11 @@ import PaymentCancel from "./pages/PaymentCancel";
 import StudentPayments from "./pages/StudentPayments";
 import StudentProfile from "./pages/StudentProfile";
 import LandingPage from "./pages/LandingPage";
+import EditStudentProfile from "./pages/EditStudentProfile";
 
 import { ThemeContext } from "./context/ThemeContext";
-import { useContext } from "react";
 
-// -------------------------------------------
-// Scroll Restoration on Route Change
-// -------------------------------------------
+// -------------------- Scroll to top --------------------
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -50,9 +48,7 @@ function ScrollToTop() {
   return null;
 }
 
-// -------------------------------------------
-// App Content — Theme Aware Wrapper
-// -------------------------------------------
+// -------------------- APP CONTENT --------------------
 function AppContent() {
   const location = useLocation();
   const { theme } = useContext(ThemeContext);
@@ -69,12 +65,12 @@ function AppContent() {
 
   return (
     <div
-      className={`
+      className="
         min-h-screen w-full 
         bg-white dark:bg-[#0f172a] 
         text-gray-900 dark:text-gray-100
         transition-colors duration-500
-      `}
+      "
     >
       {/* GLOBAL TOASTER */}
       <Toaster
@@ -97,31 +93,17 @@ function AppContent() {
         <Routes location={location} key={location.pathname}>
 
           {/* PUBLIC ROUTES */}
-          <Route
-            path="/"
-            element={
-              <PageTransition>
-                <LandingPage />
-              </PageTransition>
-            }
+          <Route 
+            path="/" 
+            element={<PageTransition><LandingPage /></PageTransition>} 
           />
-
-          <Route
-            path="/login"
-            element={
-              <PageTransition>
-                <Login />
-              </PageTransition>
-            }
+          <Route 
+            path="/login" 
+            element={<PageTransition><Login /></PageTransition>} 
           />
-
-          <Route
-            path="/register"
-            element={
-              <PageTransition>
-                <Register />
-              </PageTransition>
-            }
+          <Route 
+            path="/register" 
+            element={<PageTransition><Register /></PageTransition>} 
           />
 
           {/* TEACHER ROUTES */}
@@ -170,6 +152,31 @@ function AppContent() {
           />
 
           {/* STUDENT ROUTES */}
+
+          {/* ---- IMPORTANT: EDIT FIRST ---- */}
+          <Route
+            path="/student/profile/edit"
+            element={
+              <PageTransition>
+                <ProtectedRoute role="STUDENT">
+                  <EditStudentProfile />
+                </ProtectedRoute>
+              </PageTransition>
+            }
+          />
+
+          {/* ---- Student Profile AFTER edit route ---- */}
+          <Route
+            path="/student/profile"
+            element={
+              <PageTransition>
+                <ProtectedRoute role="STUDENT">
+                  <StudentProfile />
+                </ProtectedRoute>
+              </PageTransition>
+            }
+          />
+
           <Route
             path="/student"
             element={
@@ -215,17 +222,6 @@ function AppContent() {
           />
 
           <Route
-            path="/student/profile"
-            element={
-              <PageTransition>
-                <ProtectedRoute role="STUDENT">
-                  <StudentProfile />
-                </ProtectedRoute>
-              </PageTransition>
-            }
-          />
-
-          <Route
             path="/teacher/:id"
             element={
               <PageTransition>
@@ -248,32 +244,20 @@ function AppContent() {
             }
           />
 
-          {/* MISC */}
+          {/* MISC ROUTES */}
           <Route
             path="/not-authorized"
-            element={
-              <PageTransition>
-                <NotAuthorized />
-              </PageTransition>
-            }
+            element={<PageTransition><NotAuthorized /></PageTransition>}
           />
 
           <Route
             path="/paymentSuccess"
-            element={
-              <PageTransition>
-                <PaymentSuccess />
-              </PageTransition>
-            }
+            element={<PageTransition><PaymentSuccess /></PageTransition>}
           />
 
           <Route
             path="/paymentCancel"
-            element={
-              <PageTransition>
-                <PaymentCancel />
-              </PageTransition>
-            }
+            element={<PageTransition><PaymentCancel /></PageTransition>}
           />
         </Routes>
       </AnimatePresence>
@@ -281,9 +265,7 @@ function AppContent() {
   );
 }
 
-// -------------------------------------------
-// Root with Providers
-// -------------------------------------------
+// -------------------- ROOT --------------------
 export default function App() {
   return (
     <AuthProvider>

@@ -5,6 +5,11 @@ import Navbar from "../components/Navbar";
 import { motion } from "framer-motion";
 import { BookOpen, Star, Clock, MapPin, IndianRupee } from "lucide-react";
 
+/**
+ * BrowseTeachers / Find Tutors
+ * Updated with modern frosted cards matching Dashboard + TeacherDetails theme
+ */
+
 export default function BrowseTeachers() {
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,88 +31,142 @@ export default function BrowseTeachers() {
     fetchTeachers();
   }, []);
 
+  // Avatar initials
+  const initials = (name = "") =>
+    name
+      .split(" ")
+      .map((s) => s[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
+
   if (loading)
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-700 text-white">
+      <div className="min-h-screen bg-landing-light dark:bg-landing-dark text-gray-900 dark:text-gray-100 transition-colors duration-500">
         <Navbar />
-        <div className="p-6 text-center pt-24 text-white/90 text-lg">
-          Loading tutors...
-        </div>
+        <div className="p-6 text-center pt-24 text-lg">Loading tutors...</div>
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-700 text-white">
+    <div className="min-h-screen bg-landing-light dark:bg-landing-dark text-gray-900 dark:text-gray-100 transition-colors duration-500">
       <Navbar />
-      <div className="pt-24 px-6 max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8 text-center">
+      <div className="pt-24 px-6 max-w-6xl mx-auto pb-16">
+
+        <h1 className="text-3xl font-extrabold mb-8 text-center">
           🎓 Find Your Perfect Tutor
         </h1>
 
         {error && (
-          <p className="bg-red-500/30 text-red-200 p-3 rounded mb-4 text-center">
+          <p className="bg-red-500/20 text-red-200 p-3 rounded mb-6 text-center">
             {error}
           </p>
         )}
 
         {teachers.length === 0 ? (
-          <p className="text-center text-white/80">
-            No teachers available right now.
+          <p className="text-center text-gray-700 dark:text-gray-300">
+            No tutors available right now.
           </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {teachers.map((t, i) => (
-              <motion.div
-                key={t.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: i * 0.05 }}
-                className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-white/20 hover:scale-[1.02] hover:shadow-2xl transition-all"
-              >
-                <h2 className="text-xl font-semibold mb-2 text-white">
-                  {t.user?.name || "Unnamed Teacher"}
-                </h2>
 
-                <div className="space-y-2 text-sm text-white/90">
-                  <p className="flex items-center gap-2">
-                    <BookOpen size={16} /> <strong>Subject:</strong>{" "}
-                    {t.subject || "N/A"}
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <Star size={16} /> <strong>Skills:</strong>{" "}
-                    {t.skills || "N/A"}
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <Clock size={16} /> <strong>Experience:</strong>{" "}
-                    {t.experienceYears || 0} years
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <IndianRupee size={16} /> <strong>Hourly Rate:</strong> ₹
-                    {t.hourlyRate || 0}/hr
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <MapPin size={16} /> <strong>City:</strong>{" "}
-                    {t.city || "N/A"}
-                  </p>
-                </div>
+            {teachers.map((t, i) => {
+              const name = t.user?.name || "Tutor";
+              const skills = t.skills ? `${t.skills}` : "N/A";
 
-                {/* 🔹 Improved "View Profile" Button */}
-                <button
-                  onClick={() => navigate(`/teacher/${t.id}`)}
-                  className="glow-button mt-5 w-full py-2.5 rounded-lg 
-                             bg-gradient-to-r from-cyan-400 via-sky-500 to-purple-500 
-                             text-white font-semibold 
-                             shadow-lg shadow-sky-500/30 
-                             hover:shadow-cyan-400/50 
-                             hover:scale-[1.03] 
-                             transition-all duration-300 
-                             border border-white/20
-                             backdrop-blur-sm"
+              return (
+                <motion.div
+                  key={t.id || i}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, delay: i * 0.05 }}
+                  className="
+                    bg-white/80 dark:bg-white/5 
+                    border border-gray-200 dark:border-white/10 
+                    rounded-2xl p-6 shadow-lg 
+                    backdrop-blur-xl 
+                    hover:shadow-2xl hover:scale-[1.02] 
+                    transition-all duration-300
+                  "
                 >
-                  View Profile
-                </button>
-              </motion.div>
-            ))}
+                  {/* Avatar + Header */}
+                  <div className="flex items-center gap-4">
+                    <div
+                      className="
+                        w-14 h-14 rounded-full 
+                        bg-gradient-to-tr from-indigo-500 to-purple-500 
+                        text-white flex items-center justify-center 
+                        text-xl font-bold shadow
+                      "
+                    >
+                      {initials(name)}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-lg font-semibold truncate">
+                        {name}
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 truncate">
+                        {t.headline || t.subject || "Tutor"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Details */}
+                  <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
+
+                    <p className="flex items-center gap-2">
+                      <BookOpen size={16} /> 
+                      <strong>Subject:</strong>
+                      <span className="font-medium">{t.subject || "N/A"}</span>
+                    </p>
+
+                    <p className="flex items-center gap-2">
+                      <Star size={16} /> 
+                      <strong>Skills:</strong>
+                      <span className="font-medium">{skills}</span>
+                    </p>
+
+                    <p className="flex items-center gap-2">
+                      <Clock size={16} /> 
+                      <strong>Experience:</strong>
+                      <span className="font-medium">{t.experienceYears || 0} years</span>
+                    </p>
+
+                    <p className="flex items-center gap-2">
+                      <IndianRupee size={16} /> 
+                      <strong>Rate:</strong>
+                      <span className="font-medium">₹{t.hourlyRate || 0}/hr</span>
+                    </p>
+
+                    <p className="flex items-center gap-2">
+                      <MapPin size={16} /> 
+                      <strong>City:</strong>
+                      <span className="font-medium">{t.city || "N/A"}</span>
+                    </p>
+
+                  </div>
+
+                  {/* View Profile Button */}
+                  <button
+                    onClick={() => navigate(`/teacher/${t.id}`)}
+                    className="
+                      mt-5 w-full py-2.5 rounded-lg
+                      bg-gradient-to-r from-blue-500 to-indigo-500
+                      text-white font-semibold
+                      shadow-lg shadow-indigo-500/20
+                      hover:scale-[1.03] hover:shadow-indigo-400/40
+                      transition-all duration-300
+                      backdrop-blur-sm
+                    "
+                  >
+                    View Profile
+                  </button>
+
+                </motion.div>
+              );
+            })}
+
           </div>
         )}
       </div>

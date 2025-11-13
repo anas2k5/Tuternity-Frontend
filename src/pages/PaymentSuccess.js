@@ -2,11 +2,15 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
+import Navbar from "../components/Navbar";
+import { motion } from "framer-motion";
+import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 
-const PaymentSuccess = () => {
+export default function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const bookingId = searchParams.get("bookingId");
+
   const [status, setStatus] = useState("loading");
   const [response, setResponse] = useState(null);
 
@@ -17,18 +21,21 @@ const PaymentSuccess = () => {
           `http://localhost:8081/api/stripe/success/${bookingId}`
         );
         console.log("✅ Payment verified:", res.data);
+
         setResponse(res.data);
         setStatus("success");
         toast.success("Payment Successful! 🎉");
 
-        // Redirect after 2.5 seconds to student bookings so page remounts and fetches latest data
         setTimeout(() => navigate("/student/bookings"), 2500);
       } catch (err) {
         console.error("❌ Verification failed:", err);
+
         setStatus("error");
-        const msg = err.response?.data?.error || "Payment verification failed. Please check again.";
+        const msg =
+          err.response?.data?.error ||
+          "Payment verification failed. Please check again.";
+
         toast.error(msg);
-        // redirect back to bookings after short delay
         setTimeout(() => navigate("/student/bookings"), 3000);
       }
     };
@@ -41,63 +48,84 @@ const PaymentSuccess = () => {
     }
   }, [bookingId, navigate]);
 
-  if (status === "loading") {
-    return (
-      <div style={styles.container}>
-        <h2>⏳ Verifying your payment...</h2>
-      </div>
-    );
-  }
-
-  if (status === "error" || status === "invalid") {
-    return (
-      <div style={styles.container}>
-        <h1 style={{ color: "red" }}>❌ Payment Verification Failed</h1>
-        <p>Something went wrong. You will be redirected to your bookings page.</p>
-      </div>
-    );
-  }
-
   return (
-    <div style={styles.container}>
-      <h1 style={{ color: "green" }}>✅ Payment Successful!</h1>
-      <p>{response?.message || "Your payment has been verified."}</p>
-      <div style={styles.card}>
-        <p>
-          <strong>Booking ID:</strong> {response?.bookingId}
-        </p>
-        <p>
-          <strong>Payment Status:</strong> {response?.paymentStatus}
-        </p>
-        <p>
-          <strong>Booking Status:</strong> {response?.bookingStatus}
-        </p>
+    <div className="min-h-screen bg-landing-light dark:bg-landing-dark transition-colors duration-500">
+      <Navbar />
+
+      <div className="pt-24 px-6 flex justify-center">
+        {/* Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 25 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="
+          bg-white/70 dark:bg-white/10 
+          backdrop-blur-xl border border-white/40 dark:border-white/10
+          shadow-xl rounded-3xl p-10 max-w-xl w-full text-center
+        "
+        >
+          {/* HEADER */}
+          {status === "loading" && (
+            <div className="flex flex-col items-center gap-3">
+              <Loader2 size={45} className="animate-spin text-indigo-600" />
+              <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+                Verifying your payment...
+              </h2>
+            </div>
+          )}
+
+          {status === "success" && (
+            <div className="flex flex-col items-center gap-3">
+              <CheckCircle size={60} className="text-green-500" />
+              <h1 className="text-3xl font-extrabold text-green-600">
+                Payment Successful!
+              </h1>
+              <p className="text-gray-700 dark:text-gray-300 mt-2">
+                {response?.message || "Your payment has been verified."}
+              </p>
+
+              {/* Info Card */}
+              <div
+                className="
+                mt-6 bg-white/80 dark:bg-white/5 
+                border border-gray-300 dark:border-white/10
+                rounded-2xl py-5 px-7 text-left shadow-lg
+              "
+              >
+                <p className="text-gray-700 dark:text-gray-300">
+                  <strong>Booking ID:</strong> {response?.bookingId}
+                </p>
+                <p className="text-gray-700 dark:text-gray-300 mt-1">
+                  <strong>Payment Status:</strong> {response?.paymentStatus}
+                </p>
+                <p className="text-gray-700 dark:text-gray-300 mt-1">
+                  <strong>Booking Status:</strong> {response?.bookingStatus}
+                </p>
+              </div>
+
+              <p className="mt-5 text-gray-700 dark:text-gray-300 text-sm italic">
+                Redirecting to your bookings...
+              </p>
+            </div>
+          )}
+
+          {(status === "error" || status === "invalid") && (
+            <div className="flex flex-col items-center gap-3">
+              <XCircle size={60} className="text-red-500" />
+              <h1 className="text-3xl font-extrabold text-red-600">
+                Payment Failed
+              </h1>
+
+              <p className="text-gray-700 dark:text-gray-300 mt-2">
+                Something went wrong while validating your payment.
+              </p>
+
+              <p className="mt-5 text-gray-500 dark:text-gray-400 text-sm">
+                Redirecting back to your bookings...
+              </p>
+            </div>
+          )}
+        </motion.div>
       </div>
-      <p style={{ marginTop: "15px", color: "#4b5563" }}>
-        Redirecting to your bookings page...
-      </p>
     </div>
   );
-};
-
-const styles = {
-  container: {
-    height: "100vh",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f8fafc",
-    color: "#111",
-    fontFamily: "Arial, sans-serif",
-  },
-  card: {
-    backgroundColor: "#fff",
-    padding: "20px 40px",
-    borderRadius: "10px",
-    boxShadow: "0px 2px 10px rgba(0,0,0,0.1)",
-    marginTop: "20px",
-  },
-};
-
-export default PaymentSuccess;
+}

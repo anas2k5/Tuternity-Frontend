@@ -1,166 +1,254 @@
+// ---------------------- FULL UPDATED STUDENT PROFILE (FIXED) ----------------------
+
 import { useEffect, useState } from "react";
 import api from "../api";
 import Navbar from "../components/Navbar";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+
 import {
   User,
   Phone,
   MapPin,
   GraduationCap,
   Heart,
-  Save,
-  ArrowLeftCircle,
+  ArrowLeft,
+  Copy,
+  Edit3,
 } from "lucide-react";
+
+import { getJSON } from "../utils/storage";
 
 export default function StudentProfile() {
   const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    sessions: 0,
+    hoursStudied: 0,
+    tutors: 0,
+  });
+
   const navigate = useNavigate();
 
+  // ------------------ Fetch Student Profile ------------------
   const fetchProfile = async () => {
     try {
       const res = await api.get("/students/me");
       setProfile(res.data);
     } catch {
       toast.error("Failed to load profile.");
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  // ------------------ Fetch Stats ------------------
+  const fetchStats = async () => {
+    try {
+      const localProfile = getJSON("profile");
+      const studentId = localProfile?.id;
+      if (!studentId) return;
+
+      const res = await api.get(`/bookings/student/${studentId}`);
+      const bookings = res.data || [];
+
+      const completed = bookings.filter((b) => b.status === "COMPLETED");
+
+      const hoursStudied = completed.length * 1.0; // fallback = 1 hour per session
+      const uniqueTutors = new Set(bookings.map((b) => b.teacherName));
+
+      setStats({
+        sessions: bookings.length,
+        hoursStudied,
+        tutors: uniqueTutors.size,
+      });
+    } catch (err) {
+      console.error("Stats fetch error:", err);
     }
   };
 
   useEffect(() => {
     fetchProfile();
+    fetchStats();
   }, []);
-
-  const handleChange = (e) => {
-    setProfile({ ...profile, [e.target.name]: e.target.value });
-  };
-
-  const handleSave = async () => {
-    try {
-      await api.put("/students/me", profile);
-      toast.success("Profile updated successfully!");
-      setTimeout(() => navigate("/student"), 1500);
-    } catch {
-      toast.error("Failed to update profile.");
-    }
-  };
-
-  if (loading)
-    return (
-      <div className="min-h-screen flex items-center justify-center text-white bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-700">
-        <Navbar />
-        <p className="text-lg">Loading your profile...</p>
-      </div>
-    );
 
   if (!profile)
     return (
-      <div className="min-h-screen flex items-center justify-center text-white bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-700">
+      <div className="min-h-screen bg-landing-light dark:bg-landing-dark">
         <Navbar />
-        <p className="text-lg">Profile not found.</p>
+        <p className="text-center pt-32 text-white">Loading profile…</p>
       </div>
     );
 
+  // ------------------ Copy Email (Safe Fallback) ------------------
+  const copyEmail = async () => {
+    try {
+      const email = profile?.user?.email;
+      if (!email) return toast.error("Email not found.");
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(email);
+      } else {
+        // Fallback for older browsers
+        const ta = document.createElement("textarea");
+        ta.value = email;
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+
+      toast.success("Email copied!");
+    } catch (err) {
+      console.error("Copy failed:", err);
+      toast.error("Failed to copy email.");
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-700 text-white">
+    // IMPORTANT WRAPPER FIX: ensures background & transitions never block clicks
+    <div className="relative z-[5] min-h-screen bg-landing-light dark:bg-landing-dark transition-colors duration-500 text-gray-900 dark:text-gray-100 pointer-events-auto">
       <Navbar />
 
-      <div className="pt-24 px-6 flex justify-center items-center">
+      <div className="pt-24 px-6 max-w-6xl mx-auto pb-16">
+        {/* -------------------------------------------------
+            TOP PROFILE CARD
+        --------------------------------------------------- */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="w-full max-w-3xl bg-white/10 backdrop-blur-2xl rounded-3xl p-10 border border-white/20 shadow-[0_0_35px_rgba(56,189,248,0.3)] relative overflow-hidden"
+          transition={{ duration: 0.4 }}
+          className="bg-white/80 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl p-6 shadow-lg backdrop-blur-xl mb-10"
         >
-          {/* Glow Aura */}
-          <div className="absolute -inset-1 bg-gradient-to-r from-cyan-400/30 via-blue-500/20 to-purple-500/30 blur-3xl rounded-3xl"></div>
+          <div className="flex items-center justify-between">
+            {/* Avatar + Name */}
+            <div className="flex items-center gap-6">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+                {profile.user?.name?.[0]?.toUpperCase()}
+              </div>
 
-          {/* Header */}
-          <div className="relative text-center mb-8">
-            <h1 className="text-3xl font-extrabold tracking-wide drop-shadow-md flex items-center justify-center gap-2">
-              🎓 My Profile
-            </h1>
-            <p className="text-white/70 mt-1">
-              Update your personal details and preferences
+              <div>
+                <h1 className="text-2xl font-extrabold">{profile.user?.name}</h1>
+
+                <p className="text-gray-600 dark:text-gray-300 mt-1">
+                  Keep learning — stay curious.
+                </p>
+
+                <div className="flex flex-wrap gap-4 mt-3 text-sm">
+                  <span className="flex items-center gap-1">
+                    <GraduationCap size={16} /> {profile.educationLevel}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <MapPin size={16} /> {profile.city}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Heart size={16} /> {profile.interests}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Back Button */}
+            <button
+              onClick={() => navigate("/student")}
+              className="px-4 py-2 bg-white/20 dark:bg-white/10 rounded-lg hover:bg-white/30 transition flex items-center gap-2"
+            >
+              <ArrowLeft size={18} /> Back
+            </button>
+          </div>
+        </motion.div>
+
+        {/* -------------------------------------------------
+            STATS ROW
+        --------------------------------------------------- */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10"
+        >
+          {/* Sessions */}
+          <div className="p-6 rounded-xl bg-indigo-600/10 dark:bg-indigo-500/20 border border-indigo-300/20 shadow backdrop-blur-xl">
+            <p className="text-lg font-semibold">Sessions</p>
+            <h2 className="text-3xl font-bold mt-2">{stats.sessions}</h2>
+          </div>
+
+          {/* Hours */}
+          <div className="p-6 rounded-xl bg-blue-600/10 dark:bg-blue-500/20 border border-blue-300/20 shadow backdrop-blur-xl">
+            <p className="text-lg font-semibold">Hours Studied</p>
+            <h2 className="text-3xl font-bold mt-2">{stats.hoursStudied} hrs</h2>
+          </div>
+
+          {/* Tutors */}
+          <div className="p-6 rounded-xl bg-purple-600/10 dark:bg-purple-500/20 border border-purple-300/20 shadow backdrop-blur-xl">
+            <p className="text-lg font-semibold">Tutors Connected</p>
+            <h2 className="text-3xl font-bold mt-2">{stats.tutors}</h2>
+          </div>
+        </motion.div>
+
+        {/* -------------------------------------------------
+            PROFILE DETAILS
+        --------------------------------------------------- */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          {/* Personal */}
+          <div className="p-6 rounded-xl bg-white/80 dark:bg-white/5 border border-gray-200 dark:border-white/10 shadow">
+            <h2 className="text-xl font-semibold mb-4">Personal</h2>
+
+            <p>
+              <strong>Name:</strong> {profile.user?.name}
+            </p>
+
+            <p className="mt-2 flex items-center gap-2">
+              <Phone size={16} /> {profile.phone}
+            </p>
+
+            <p className="mt-1 flex items-center gap-2">
+              <MapPin size={16} /> {profile.city}
             </p>
           </div>
 
-          {/* Form */}
-          <div className="relative space-y-6 z-10">
-            {[
-              { label: "Name", icon: User, name: "name", value: profile.user?.name, isUserField: true },
-              { label: "Phone", icon: Phone, name: "phone", value: profile.phone },
-              { label: "City", icon: MapPin, name: "city", value: profile.city },
-              { label: "Education Level", icon: GraduationCap, name: "educationLevel", value: profile.educationLevel },
-              { label: "Interests", icon: Heart, name: "interests", value: profile.interests, textarea: true },
-            ].map((field, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-              >
-                <label className="flex items-center gap-2 text-white/90 font-semibold mb-1">
-                  <field.icon size={18} /> {field.label}
-                </label>
+          {/* Education */}
+          <div className="p-6 rounded-xl bg-white/80 dark:bg-white/5 border border-gray-200 dark:border-white/10 shadow">
+            <h2 className="text-xl font-semibold mb-4">Education & Account</h2>
 
-                {field.textarea ? (
-                  <textarea
-                    name={field.name}
-                    value={field.value || ""}
-                    onChange={(e) =>
-                      field.isUserField
-                        ? setProfile({
-                            ...profile,
-                            user: { ...profile.user, name: e.target.value },
-                          })
-                        : handleChange(e)
-                    }
-                    rows="3"
-                    className="w-full p-3 rounded-xl bg-white/15 text-white placeholder-white/50 border border-white/30 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:shadow-[0_0_20px_rgba(56,189,248,0.4)] transition-all"
-                    placeholder={`Enter your ${field.label.toLowerCase()}`}
-                  />
-                ) : (
-                  <input
-                    type="text"
-                    name={field.name}
-                    value={field.value || ""}
-                    onChange={(e) =>
-                      field.isUserField
-                        ? setProfile({
-                            ...profile,
-                            user: { ...profile.user, name: e.target.value },
-                          })
-                        : handleChange(e)
-                    }
-                    className="w-full p-3 rounded-xl bg-white/15 text-white placeholder-white/50 border border-white/30 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:shadow-[0_0_20px_rgba(56,189,248,0.4)] transition-all"
-                    placeholder={`Enter your ${field.label.toLowerCase()}`}
-                  />
-                )}
-              </motion.div>
-            ))}
+            <p className="flex items-center gap-2">
+              <GraduationCap size={16} /> {profile.educationLevel}
+            </p>
 
-            {/* Buttons */}
-            <div className="flex justify-end gap-4 pt-6">
+            <p className="mt-2 flex items-center gap-2">
+              <User size={16} /> {profile.user?.email}
+            </p>
+          </div>
+
+          {/* Interests */}
+          <div className="p-6 rounded-xl bg-white/80 dark:bg-white/5 border border-gray-200 dark:border-white/10 shadow">
+            <h2 className="text-xl font-semibold mb-4">Interests</h2>
+
+            <p>{profile.interests}</p>
+
+            <div className="flex gap-3 mt-4">
+              {/* EDIT PROFILE */}
               <button
-                onClick={() => navigate("/student")}
-                className="px-5 py-2.5 rounded-lg bg-white/20 text-white/90 font-medium hover:bg-white/30 hover:scale-[1.03] transition-all flex items-center gap-2"
+                onClick={() => navigate("/student/profile/edit")}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center gap-2"
               >
-                <ArrowLeftCircle size={18} /> Cancel
+                <Edit3 size={16} /> Edit Profile
               </button>
 
+              {/* COPY EMAIL */}
               <button
-                onClick={handleSave}
-                className="px-6 py-2.5 rounded-lg font-semibold text-white bg-gradient-to-r from-cyan-400 via-sky-500 to-purple-500 hover:shadow-[0_0_25px_rgba(56,189,248,0.6)] hover:scale-[1.05] transition-all flex items-center gap-2"
+                onClick={copyEmail}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition flex items-center gap-2"
               >
-                <Save size={18} /> Save Changes
+                <Copy size={16} /> Copy Email
               </button>
             </div>
           </div>
-        </motion.div>
+        </div>
+
+        <p className="text-center mt-8 text-gray-700 dark:text-gray-300">
+          Pro tip: Edit your details anytime — updates reflect instantly.
+        </p>
       </div>
     </div>
   );
