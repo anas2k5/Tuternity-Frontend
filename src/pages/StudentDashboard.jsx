@@ -1,3 +1,5 @@
+// ---------------- FULL UPDATED STUDENT DASHBOARD ------------------
+
 import { useEffect, useState } from "react";
 import api from "../api";
 import Navbar from "../components/Navbar";
@@ -24,37 +26,22 @@ export default function StudentDashboard() {
   const [stats, setStats] = useState({
     upcoming: 0,
     completed: 0,
-    totalHours: 0,
+    tutors: 0,   // <-- CHANGED HERE 🚀
   });
 
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   // -----------------------------------------------------
-  // 🎯 Format time and duration
+  // 🎯 Format time
   // -----------------------------------------------------
   const formatTimeRange = (b) => {
     if (!b) return "-";
-
     const s = b.startTime ?? b.timeSlot ?? null;
     const e = b.endTime ?? null;
-
     if (s && e) return `${String(s)} - ${String(e)}`;
-    if (b.timeSlot && typeof b.timeSlot === "string") return b.timeSlot;
-
+    if (b.timeSlot) return b.timeSlot;
     return "-";
-  };
-
-  const calculateDurationHours = (b) => {
-    if (!b?.startTime || !b?.endTime) return 0;
-
-    const start = new Date(`2000-01-01T${b.startTime}`);
-    const end = new Date(`2000-01-01T${b.endTime}`);
-
-    const diffMs = end - start;
-    if (diffMs <= 0) return 0;
-
-    return diffMs / (1000 * 60 * 60); // Hours
   };
 
   // -----------------------------------------------------
@@ -91,9 +78,11 @@ export default function StudentDashboard() {
         setLatestBooking(sorted[0]);
       }
 
-      // Stats
-      const now = new Date();
+      // -------- NEW: Tutors Connected Calculation -------
+      const uniqueTutors = new Set(bookings.map((b) => b.teacherName));
 
+      // -------- Existing stats ------------
+      const now = new Date();
       const upcoming = bookings.filter((b) => {
         const d = new Date(b.date);
         return d >= now && b.status !== "CANCELLED";
@@ -101,14 +90,10 @@ export default function StudentDashboard() {
 
       const completed = bookings.filter((b) => b.status === "COMPLETED").length;
 
-      const totalHours = bookings
-        .filter((b) => b.status === "COMPLETED")
-        .reduce((sum, b) => sum + calculateDurationHours(b), 0);
-
       setStats({
         upcoming,
         completed,
-        totalHours: totalHours.toFixed(1),
+        tutors: uniqueTutors.size, // <-- UPDATED 🚀
       });
     } catch (error) {
       toast.error("Failed to fetch bookings.");
@@ -138,9 +123,7 @@ export default function StudentDashboard() {
 
       <div className="pt-24 px-6 max-w-6xl mx-auto space-y-10">
 
-        {/* --------------------------------------------------
-            WELCOME CARD
-        -------------------------------------------------- */}
+        {/* -------------------- WELCOME CARD -------------------- */}
         <motion.div
           initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
@@ -179,9 +162,7 @@ export default function StudentDashboard() {
           </div>
         </motion.div>
 
-        {/* --------------------------------------------------
-            STATS CARDS
-        -------------------------------------------------- */}
+        {/* ---------------------- STATS CARDS ---------------------- */}
         <motion.div
           initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
@@ -200,16 +181,14 @@ export default function StudentDashboard() {
             <h2 className="text-3xl font-bold mt-2">{stats.completed}</h2>
           </div>
 
-          {/* HOURS */}
+          {/* TUTORS CONNECTED — NEW CARD */}
           <div className="p-5 rounded-xl bg-purple-500/10 dark:bg-purple-500/20 border border-purple-300/30 dark:border-purple-300/10 shadow-md backdrop-blur-xl">
-            <p className="text-lg font-semibold">Total Hours Studied</p>
-            <h2 className="text-3xl font-bold mt-2">{stats.totalHours}h</h2>
+            <p className="text-lg font-semibold">Tutors Connected</p>
+            <h2 className="text-3xl font-bold mt-2">{stats.tutors}</h2>
           </div>
         </motion.div>
 
-        {/* --------------------------------------------------
-            LATEST BOOKING
-        -------------------------------------------------- */}
+        {/* ---------------------- LATEST BOOKING ---------------------- */}
         <motion.div
           initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
@@ -236,7 +215,6 @@ export default function StudentDashboard() {
               <p><strong>Date:</strong> {latestBooking.date}</p>
               <p><strong>Time:</strong> {formatTimeRange(latestBooking)}</p>
 
-              {/* STATUS BADGE */}
               <div className="mt-3">
                 <span
                   className={`
@@ -291,27 +269,27 @@ export default function StudentDashboard() {
           )}
         </motion.div>
 
-        {/* --------------------------------------------------
-            PROFILE BUTTON
-        -------------------------------------------------- */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.75 }}
-          className="text-center pb-10"
-        >
-          <button
-            onClick={() => navigate("/student/profile")}
-            className="
-              px-6 py-2 rounded-lg 
-              bg-purple-600 text-white 
-              hover:bg-purple-700 transition 
-              flex items-center gap-2 mx-auto
-            "
-          >
-            <Edit3 size={18} /> View / Edit My Profile
-          </button>
-        </motion.div>
+        {/* ------------------- PROFILE BUTTON ------------------- */}
+       <motion.div
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.75 }}
+  className="text-center pb-10 relative z-20"
+>
+  <button
+    onClick={() => navigate("/student/profile")}
+    className="
+      px-6 py-2 rounded-lg 
+      bg-purple-600 text-white 
+      hover:bg-purple-700 transition 
+      flex items-center gap-2 mx-auto
+      relative z-30
+    "
+  >
+    <Edit3 size={18} /> View / Edit My Profile
+  </button>
+</motion.div>
+
       </div>
     </div>
   );
