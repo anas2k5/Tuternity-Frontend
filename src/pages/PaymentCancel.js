@@ -4,20 +4,20 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import Navbar from "../components/Navbar";
 import { motion } from "framer-motion";
-import { XCircle, Loader2 } from "lucide-react";
+import { XCircle } from "lucide-react";
 
 export default function PaymentCancel() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const bookingId = searchParams.get("bookingId");
 
+  const API = process.env.REACT_APP_API_URL; // ✅ USE ENV
+
   useEffect(() => {
     const cancelPayment = async () => {
       try {
         if (bookingId) {
-          await axios.get(
-            `http://localhost:8081/api/stripe/cancel/${bookingId}`
-          );
+          await axios.get(`${API}/stripe/cancel/${bookingId}`);
         }
         toast.error("Payment Cancelled ❌");
       } catch (error) {
@@ -29,14 +29,13 @@ export default function PaymentCancel() {
     };
 
     cancelPayment();
-  }, [bookingId, navigate]);
+  }, [bookingId, navigate, API]);
 
   return (
     <div className="min-h-screen bg-landing-light dark:bg-landing-dark transition-colors duration-500">
       <Navbar />
 
       <div className="pt-24 px-6 flex justify-center">
-        {/* CARD */}
         <motion.div
           initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}

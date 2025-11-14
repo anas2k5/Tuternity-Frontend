@@ -11,15 +11,15 @@ export default function PaymentSuccess() {
   const navigate = useNavigate();
   const bookingId = searchParams.get("bookingId");
 
+  const API = process.env.REACT_APP_API_URL; // ✅ USE ENV
+
   const [status, setStatus] = useState("loading");
   const [response, setResponse] = useState(null);
 
   useEffect(() => {
     const verifyPayment = async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:8081/api/stripe/success/${bookingId}`
-        );
+        const res = await axios.get(`${API}/stripe/success/${bookingId}`);
         console.log("✅ Payment verified:", res.data);
 
         setResponse(res.data);
@@ -46,14 +46,13 @@ export default function PaymentSuccess() {
       toast.error("Invalid or missing booking ID.");
       setTimeout(() => navigate("/student/bookings"), 2000);
     }
-  }, [bookingId, navigate]);
+  }, [bookingId, navigate, API]);
 
   return (
     <div className="min-h-screen bg-landing-light dark:bg-landing-dark transition-colors duration-500">
       <Navbar />
 
       <div className="pt-24 px-6 flex justify-center">
-        {/* Card */}
         <motion.div
           initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
@@ -63,7 +62,6 @@ export default function PaymentSuccess() {
           shadow-xl rounded-3xl p-10 max-w-xl w-full text-center
         "
         >
-          {/* HEADER */}
           {status === "loading" && (
             <div className="flex flex-col items-center gap-3">
               <Loader2 size={45} className="animate-spin text-indigo-600" />
@@ -83,7 +81,6 @@ export default function PaymentSuccess() {
                 {response?.message || "Your payment has been verified."}
               </p>
 
-              {/* Info Card */}
               <div
                 className="
                 mt-6 bg-white/80 dark:bg-white/5 
