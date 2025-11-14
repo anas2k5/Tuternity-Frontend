@@ -1,4 +1,4 @@
-// ---------------------- FULL UPDATED STUDENT PROFILE (FIXED) ----------------------
+// ---------------------- FULL UPDATED STUDENT PROFILE (WITH IMAGE UPLOAD + REMOVE) ----------------------
 
 import { useEffect, useState } from "react";
 import api from "../api";
@@ -16,6 +16,8 @@ import {
   ArrowLeft,
   Copy,
   Edit3,
+  Camera,
+  Trash2,
 } from "lucide-react";
 
 import { getJSON } from "../utils/storage";
@@ -28,6 +30,8 @@ export default function StudentProfile() {
     tutors: 0,
   });
 
+  const [preview, setPreview] = useState(""); // For uploaded image preview
+
   const navigate = useNavigate();
 
   // ------------------ Fetch Student Profile ------------------
@@ -35,6 +39,7 @@ export default function StudentProfile() {
     try {
       const res = await api.get("/students/me");
       setProfile(res.data);
+      setPreview(res.data.profilePic || "");
     } catch {
       toast.error("Failed to load profile.");
     }
@@ -52,7 +57,7 @@ export default function StudentProfile() {
 
       const completed = bookings.filter((b) => b.status === "COMPLETED");
 
-      const hoursStudied = completed.length * 1.0; // fallback = 1 hour per session
+      const hoursStudied = completed.length * 1.0;
       const uniqueTutors = new Set(bookings.map((b) => b.teacherName));
 
       setStats({
@@ -78,26 +83,13 @@ export default function StudentProfile() {
       </div>
     );
 
-  // ------------------ Copy Email (Safe Fallback) ------------------
+  // ------------------ Copy Email ------------------
   const copyEmail = async () => {
     try {
       const email = profile?.user?.email;
       if (!email) return toast.error("Email not found.");
 
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(email);
-      } else {
-        // Fallback for older browsers
-        const ta = document.createElement("textarea");
-        ta.value = email;
-        ta.style.position = "fixed";
-        ta.style.left = "-9999px";
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
-      }
-
+      await navigator.clipboard.writeText(email);
       toast.success("Email copied!");
     } catch (err) {
       console.error("Copy failed:", err);
@@ -105,12 +97,49 @@ export default function StudentProfile() {
     }
   };
 
+  // ------------------ Upload Profile Image ------------------
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        setPreview(reader.result);
+
+        const updated = { ...profile, profilePic: reader.result };
+        setProfile(updated);
+
+        await api.put("/students/me", updated);
+        toast.success("Profile picture updated!");
+      } catch {
+        toast.error("Failed to update picture.");
+      }
+    };
+
+    reader.readAsDataURL(file);
+  };
+
+  // ------------------ Remove Profile Image ------------------
+  const removePhoto = async () => {
+    try {
+      const updated = { ...profile, profilePic: "" };
+      setProfile(updated);
+      setPreview("");
+
+      await api.put("/students/me", updated);
+      toast.success("Profile picture removed!");
+    } catch {
+      toast.error("Failed to remove picture.");
+    }
+  };
+
   return (
-    // IMPORTANT WRAPPER FIX: ensures background & transitions never block clicks
     <div className="relative z-[5] min-h-screen bg-landing-light dark:bg-landing-dark transition-colors duration-500 text-gray-900 dark:text-gray-100 pointer-events-auto">
       <Navbar />
 
       <div className="pt-24 px-6 max-w-6xl mx-auto pb-16">
+
         {/* -------------------------------------------------
             TOP PROFILE CARD
         --------------------------------------------------- */}
@@ -121,12 +150,45 @@ export default function StudentProfile() {
           className="bg-white/80 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl p-6 shadow-lg backdrop-blur-xl mb-10"
         >
           <div className="flex items-center justify-between">
+
             {/* Avatar + Name */}
             <div className="flex items-center gap-6">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
-                {profile.user?.name?.[0]?.toUpperCase()}
+
+              {/* ---------------- PROFILE IMAGE ---------------- */}
+              <div className="relative w-20 h-20">
+                <img
+                  src={
+                    preview ||
+                    profile.profilePic ||
+                    `https://api.dicebear.com/7.x/personas/svg?seed=${profile.user?.name}`
+                  }
+                  className="w-20 h-20 rounded-full object-cover shadow-lg border border-white/20"
+                  alt="Student Avatar"
+                />
+
+                {/* Upload Button */}
+                <label className="absolute bottom-0 right-0 bg-indigo-600 p-1 rounded-full cursor-pointer shadow hover:scale-105 transition">
+                  <Camera size={16} className="text-white" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                  />
+                </label>
+
+                {/* Remove Photo Button */}
+                {preview && (
+                  <button
+                    onClick={removePhoto}
+                    className="absolute -bottom-2 left-1 bg-red-600 p-1 rounded-full shadow hover:bg-red-700 transition"
+                  >
+                    <Trash2 size={14} className="text-white" />
+                  </button>
+                )}
               </div>
 
+              {/* ---------------- Name + Info ---------------- */}
               <div>
                 <h1 className="text-2xl font-extrabold">{profile.user?.name}</h1>
 
@@ -167,19 +229,16 @@ export default function StudentProfile() {
           transition={{ duration: 0.5 }}
           className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10"
         >
-          {/* Sessions */}
           <div className="p-6 rounded-xl bg-indigo-600/10 dark:bg-indigo-500/20 border border-indigo-300/20 shadow backdrop-blur-xl">
             <p className="text-lg font-semibold">Sessions</p>
             <h2 className="text-3xl font-bold mt-2">{stats.sessions}</h2>
           </div>
 
-          {/* Hours */}
           <div className="p-6 rounded-xl bg-blue-600/10 dark:bg-blue-500/20 border border-blue-300/20 shadow backdrop-blur-xl">
             <p className="text-lg font-semibold">Hours Studied</p>
             <h2 className="text-3xl font-bold mt-2">{stats.hoursStudied} hrs</h2>
           </div>
 
-          {/* Tutors */}
           <div className="p-6 rounded-xl bg-purple-600/10 dark:bg-purple-500/20 border border-purple-300/20 shadow backdrop-blur-xl">
             <p className="text-lg font-semibold">Tutors Connected</p>
             <h2 className="text-3xl font-bold mt-2">{stats.tutors}</h2>
@@ -190,6 +249,7 @@ export default function StudentProfile() {
             PROFILE DETAILS
         --------------------------------------------------- */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+
           {/* Personal */}
           <div className="p-6 rounded-xl bg-white/80 dark:bg-white/5 border border-gray-200 dark:border-white/10 shadow">
             <h2 className="text-xl font-semibold mb-4">Personal</h2>
@@ -227,7 +287,6 @@ export default function StudentProfile() {
             <p>{profile.interests}</p>
 
             <div className="flex gap-3 mt-4">
-              {/* EDIT PROFILE */}
               <button
                 onClick={() => navigate("/student/profile/edit")}
                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center gap-2"
@@ -235,7 +294,6 @@ export default function StudentProfile() {
                 <Edit3 size={16} /> Edit Profile
               </button>
 
-              {/* COPY EMAIL */}
               <button
                 onClick={copyEmail}
                 className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition flex items-center gap-2"
