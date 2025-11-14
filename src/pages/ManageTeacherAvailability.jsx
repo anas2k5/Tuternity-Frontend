@@ -24,14 +24,20 @@ const ManageTeacherAvailability = () => {
       const response = await api.get(`${API_URL}/me`);
       setSlots(response.data);
     } catch (error) {
-      toast.error("Failed to load availability");
+      toast.error(error?.response?.data?.message || "Failed to load availability");
     }
   };
 
   const handleAddAvailability = async (e) => {
     e.preventDefault();
+
     if (!date || !startTime || !endTime) {
       toast.error("Please fill all fields!");
+      return;
+    }
+
+    if (endTime <= startTime) {
+      toast.error("End time must be after start time.");
       return;
     }
 
@@ -43,19 +49,27 @@ const ManageTeacherAvailability = () => {
       setEndTime("");
       fetchSlots();
     } catch (error) {
-      toast.error("Failed to add slot");
+      toast.error(error?.response?.data?.message || "Failed to add slot");
     }
   };
 
-  // ✔ modern popup delete
   const confirmDelete = async () => {
+    const slot = slots.find((s) => s.id === deleteId);
+
+    if (slot?.booked) {
+      toast.error("This slot is already booked and cannot be deleted.");
+      setDeleteId(null);
+      return;
+    }
+
     try {
       await api.delete(`${API_URL}/${deleteId}`);
-      toast.success("Slot removed");
+      toast.success("Slot removed successfully");
       setDeleteId(null);
       fetchSlots();
     } catch (error) {
-      toast.error("Failed to remove slot");
+      toast.error(error?.response?.data?.message || "Failed to remove slot");
+      setDeleteId(null);
     }
   };
 
@@ -71,7 +85,6 @@ const ManageTeacherAvailability = () => {
     >
       <Navbar />
 
-      {/* CONFIRM MODAL */}
       <ConfirmDialog
         open={!!deleteId}
         onClose={() => setDeleteId(null)}
@@ -79,8 +92,6 @@ const ManageTeacherAvailability = () => {
       />
 
       <div className="pt-28 px-6 max-w-4xl mx-auto">
-
-        {/* MAIN CARD */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -94,7 +105,6 @@ const ManageTeacherAvailability = () => {
             transition-all
           "
         >
-          {/* TITLE */}
           <h2 className="text-3xl font-bold mb-8 flex items-center gap-2 text-gray-900 dark:text-white">
             <Calendar size={28} /> Manage Availability
           </h2>
@@ -161,7 +171,6 @@ const ManageTeacherAvailability = () => {
               />
             </div>
 
-            {/* BUTTON */}
             <div className="flex items-end">
               <button
                 type="submit"
@@ -178,19 +187,16 @@ const ManageTeacherAvailability = () => {
             </div>
           </form>
 
-          {/* LIST TITLE */}
           <h3 className="text-2xl font-bold mb-4 flex items-center gap-2 text-gray-900 dark:text-white">
             <Clock size={22} /> Your Available Slots
           </h3>
 
-          {/* EMPTY */}
           {slots.length === 0 && (
             <p className="text-gray-500 dark:text-gray-300 italic">
               No slots added yet.
             </p>
           )}
 
-          {/* SLOTS */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {slots.map((slot, i) => (
               <motion.div
@@ -214,16 +220,25 @@ const ManageTeacherAvailability = () => {
                 </p>
 
                 <button
-                  onClick={() => setDeleteId(slot.id)}
-                  className="
+                  onClick={() => {
+                    if (slot.booked) {
+                      toast.error("This slot already has a booking and cannot be removed.");
+                      return;
+                    }
+                    setDeleteId(slot.id);
+                  }}
+                  disabled={slot.booked}
+                  className={`
                     w-full py-2 rounded-lg
-                    bg-red-500 hover:bg-red-600 
-                    text-white font-semibold text-sm
-                    flex items-center justify-center gap-2
-                    transition
-                  "
+                    text-white font-semibold text-sm flex items-center justify-center gap-2 transition
+                    ${
+                      slot.booked
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-red-500 hover:bg-red-600"
+                    }
+                  `}
                 >
-                  <Trash2 size={14} /> Remove
+                  <Trash2 size={14} /> {slot.booked ? "Booked" : "Remove"}
                 </button>
               </motion.div>
             ))}
