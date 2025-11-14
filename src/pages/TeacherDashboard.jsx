@@ -1,3 +1,4 @@
+// src/pages/TeacherDashboard.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
@@ -94,7 +95,7 @@ export default function TeacherDashboard() {
       label: "Completed Sessions",
       value: stats.completedSessions,
       icon: CheckCircle2,
-      color: "text-blue-400",
+      color: "text-cyan-300",
       tooltip: "See all completed bookings",
       onClick: handleViewBookings,
     },
@@ -102,7 +103,7 @@ export default function TeacherDashboard() {
       label: "Upcoming Bookings",
       value: stats.upcomingBookings,
       icon: CalendarDays,
-      color: "text-yellow-400",
+      color: "text-yellow-300",
       tooltip: "See all upcoming bookings",
       onClick: handleViewBookings,
     },
@@ -121,61 +122,80 @@ export default function TeacherDashboard() {
     .filter((p) => p.status === "SUCCESS")
     .reduce((sum, p) => sum + (p.amount || 0), 0);
 
-  // ✅ Safely get teacher name
   const profile = getJSON("profile");
-  const teacherName =
-    profile?.name || profile?.user?.name || "Teacher";
+  const teacherName = profile?.name || profile?.user?.name || "Teacher";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#5b21b6] via-blue-700 to-purple-700 text-white">
+    <div className="min-h-screen bg-landing-light dark:bg-landing-dark transition-colors duration-500 text-gray-900 dark:text-gray-100">
       <Navbar />
 
-      <div className="pt-24 px-6 max-w-6xl mx-auto">
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
+      <div className="pt-24 px-6 max-w-6xl mx-auto pb-16">
+        {/* ---------- HERO / WELCOME CARD (student-style like requested) ---------- */}
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-3xl font-bold mb-6 text-center flex items-center justify-center gap-2"
+          transition={{ duration: 0.45 }}
+          className="bg-white/80 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl p-6 shadow-lg backdrop-blur-xl mb-10"
         >
-          👋 Welcome back,{" "}
-          <span className="text-cyan-300">{teacherName}</span>!
-        </motion.h1>
+          <div className="text-center">
+            <h1 className="text-3xl md:text-4xl font-extrabold flex items-center justify-center gap-2">
+              <span>👋</span>
+              <span>Welcome back,</span>
+              <span className="text-cyan-500 dark:text-cyan-300">{teacherName}</span>
+              <span>!</span>
+            </h1>
 
-        <p className="text-center text-white/80 mb-10">
-          Here’s a quick overview of your performance and activity.
-        </p>
+            <p className="text-gray-700 dark:text-gray-300 mt-2">
+              Here’s a quick overview of your performance and activity.
+            </p>
+          </div>
+        </motion.div>
 
         {loading ? (
-          <p className="text-center text-white/80">Loading your dashboard...</p>
+          <p className="text-center text-gray-700 dark:text-gray-300 italic">
+            Loading your dashboard...
+          </p>
         ) : (
           <>
-            {/* ====== STATS SECTION ====== */}
+            {/* ---------- STATS CARDS (matches student style) ---------- */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
               {statCards.map((item, i) => (
                 <motion.div
                   key={i}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
+                  transition={{ delay: i * 0.08 }}
                   onClick={item.onClick}
                   onMouseEnter={() => setHoveredCard(i)}
                   onMouseLeave={() => setHoveredCard(null)}
-                  className="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 shadow-lg hover:shadow-xl hover:bg-white/20 transition-all cursor-pointer"
+                  className="relative bg-white/80 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl p-6 shadow-lg hover:shadow-2xl backdrop-blur-xl transition-all cursor-pointer"
                 >
-                  <div className="flex items-center justify-center gap-3 mb-3">
-                    <item.icon size={24} className={`${item.color}`} />
-                    <h3 className="text-lg font-semibold">{item.label}</h3>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <item.icon size={22} className={`${item.color}`} />
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                        {item.label}
+                      </h3>
+                    </div>
+
+                    {/* small subtle pill showing label in dark/light */}
+                    <div className="hidden sm:block text-sm text-gray-500 dark:text-gray-400">
+                      &nbsp;
+                    </div>
                   </div>
-                  <p className={`text-3xl font-bold text-center ${item.color}`}>
+
+                  <p
+                    className={`text-3xl font-extrabold mt-4 ${item.color} text-left`}
+                  >
                     {item.value}
                   </p>
 
                   {hoveredCard === i && (
                     <motion.div
-                      initial={{ opacity: 0, y: 10 }}
+                      initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="absolute left-1/2 -bottom-10 transform -translate-x-1/2 bg-white/20 backdrop-blur-md text-white text-xs px-3 py-1 rounded-lg shadow-md border border-white/20"
+                      transition={{ duration: 0.18 }}
+                      className="absolute left-1/2 -bottom-10 transform -translate-x-1/2 bg-white/20 dark:bg-white/10 backdrop-blur-md text-gray-900 dark:text-white text-xs px-3 py-1 rounded-lg shadow-md border border-white/10"
                     >
                       {item.tooltip}
                     </motion.div>
@@ -184,7 +204,7 @@ export default function TeacherDashboard() {
               ))}
             </div>
 
-            {/* ====== ACTIONS SECTION ====== */}
+            {/* ---------- ACTION CARDS (Manage Profile / Availability / Bookings) ---------- */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
               {[
                 {
@@ -211,42 +231,49 @@ export default function TeacherDashboard() {
                   onClick={card.onClick}
                   whileHover={{ scale: 1.02 }}
                   transition={{ type: "spring", stiffness: 150 }}
-                  className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 shadow-md cursor-pointer hover:bg-white/20 transition-all text-center"
+                  className="bg-white/80 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl p-6 shadow-md cursor-pointer hover:shadow-xl backdrop-blur-xl transition-all text-center"
                 >
-                  <card.icon size={28} className="mx-auto mb-3 text-cyan-300" />
-                  <h2 className="text-lg font-semibold mb-1">{card.title}</h2>
-                  <p className="text-sm text-white/80">{card.desc}</p>
+                  <card.icon size={28} className="mx-auto mb-3 text-cyan-500 dark:text-cyan-300" />
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                    {card.title}
+                  </h2>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">{card.desc}</p>
                 </motion.div>
               ))}
             </div>
 
-            {/* ====== ANALYTICS CHART ====== */}
-            <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 shadow-lg mb-10">
-              <h2 className="text-xl font-semibold flex items-center gap-2 mb-4">
-                <LineChart size={22} /> Analytics Overview
+            {/* ---------- ANALYTICS CHART (card style matching student) ---------- */}
+            <div className="bg-white/80 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl p-6 shadow-lg mb-10 backdrop-blur-xl">
+              <h2 className="text-xl font-semibold flex items-center gap-2 mb-4 text-gray-900 dark:text-gray-100">
+                <LineChart size={20} /> Analytics Overview
               </h2>
 
               {chartData.length === 0 ? (
-                <p className="text-center text-white/70 italic">
+                <p className="text-center text-gray-700 dark:text-gray-300 italic">
                   No analytics data yet.
                 </p>
               ) : (
                 <div className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
-                      <XAxis dataKey="month" stroke="#ffffff90" />
-                      <YAxis stroke="#ffffff90" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#00000010" />
+                      <XAxis dataKey="month" stroke="#374151" />
+                      <YAxis stroke="#374151" />
                       <Tooltip
+                        wrapperStyle={{
+                          backgroundColor: "rgba(255,255,255,0.9)",
+                          borderRadius: 8,
+                          color: "#111827",
+                        }}
                         contentStyle={{
-                          backgroundColor: "rgba(255,255,255,0.1)",
+                          backgroundColor: "rgba(255,255,255,0.98)",
                           border: "none",
-                          color: "#fff",
+                          color: "#111827",
                         }}
                       />
                       <Bar
                         dataKey="sessions"
-                        fill="#38bdf8"
+                        fill="#7dd3fc"
                         radius={[8, 8, 0, 0]}
                       />
                     </BarChart>
@@ -255,22 +282,21 @@ export default function TeacherDashboard() {
               )}
             </div>
 
-            {/* ====== RECENT PAYMENTS ====== */}
+            {/* ---------- RECENT PAYMENTS (matching student card style) ---------- */}
             <div
               ref={paymentsRef}
-              className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 shadow-lg"
+              className="bg-white/80 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl p-6 shadow-lg mb-16 backdrop-blur-xl"
             >
-              <h2 className="text-xl font-semibold mb-2 flex items-center gap-2">
+              <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100 flex items-center gap-2">
                 💵 Recent Payments
               </h2>
 
-              {/* ✅ Total Earnings Summary with animation */}
               {payments.length > 0 && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="text-sm text-green-300 mb-4 bg-green-400/10 border border-green-400/20 px-4 py-2 rounded-lg w-fit shadow-md"
+                  transition={{ duration: 0.25 }}
+                  className="text-sm text-green-800 dark:text-green-200 mb-4 inline-block bg-green-50 dark:bg-green-900/20 px-4 py-2 rounded-lg border border-green-200 dark:border-green-800/40 shadow-sm"
                 >
                   💰 Total Earnings from Successful Payments:{" "}
                   <span className="font-semibold">
@@ -280,45 +306,43 @@ export default function TeacherDashboard() {
               )}
 
               {payments.length === 0 ? (
-                <p className="text-center text-white/70">
+                <p className="text-center text-gray-700 dark:text-gray-300">
                   No recent payments found.
                 </p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="min-w-full border-collapse">
-                    <thead className="bg-white/10">
+                    <thead>
                       <tr>
-                        {[
-                          "BOOKING ID",
-                          "AMOUNT",
-                          "STATUS",
-                          "STUDENT",
-                          "DATE",
-                        ].map((h) => (
-                          <th
-                            key={h}
-                            className="px-4 py-3 text-left text-white/80 font-semibold uppercase text-sm"
-                          >
-                            {h}
-                          </th>
-                        ))}
+                        {["BOOKING ID", "AMOUNT", "STATUS", "STUDENT", "DATE"].map(
+                          (h) => (
+                            <th
+                              key={h}
+                              className="px-4 py-3 text-left text-gray-700 dark:text-gray-300 font-semibold uppercase text-sm"
+                            >
+                              {h}
+                            </th>
+                          )
+                        )}
                       </tr>
                     </thead>
                     <tbody>
-                      {payments.slice(-5).reverse().map((p) => (
+                      {payments.slice(-8).reverse().map((p) => (
                         <tr
                           key={p.id}
-                          className="border-b border-white/10 hover:bg-white/10 transition"
+                          className="border-b border-gray-200/10 hover:bg-white/5 transition"
                         >
-                          <td className="px-4 py-3">{p.booking?.id || "-"}</td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 text-gray-900 dark:text-gray-100">
+                            {p.booking?.id || "-"}
+                          </td>
+                          <td className="px-4 py-3 text-gray-900 dark:text-gray-100">
                             ₹{p.amount ? p.amount.toFixed(2) : "0.00"}
                           </td>
                           <td className="px-4 py-3">
                             <span
                               className={`px-2 py-1 rounded text-xs font-semibold ${
                                 p.status === "SUCCESS"
-                                  ? "bg-green-400/20 text-green-300"
+                                  ? "bg-green-500/20 text-green-300"
                                   : p.status === "PENDING"
                                   ? "bg-yellow-400/20 text-yellow-300"
                                   : "bg-red-400/20 text-red-300"
@@ -327,10 +351,10 @@ export default function TeacherDashboard() {
                               {p.status}
                             </span>
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 text-gray-900 dark:text-gray-100">
                             {p.booking?.student?.user?.name || "-"}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 text-gray-900 dark:text-gray-100">
                             {formatDate(p.createdAt)}
                           </td>
                         </tr>

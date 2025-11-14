@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
+import ConfirmDialog from "../components/ConfirmDialog";
 import api from "../api";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
@@ -10,6 +11,7 @@ const ManageTeacherAvailability = () => {
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [slots, setSlots] = useState([]);
+  const [deleteId, setDeleteId] = useState(null);
 
   const API_URL = "/availability";
 
@@ -22,8 +24,7 @@ const ManageTeacherAvailability = () => {
       const response = await api.get(`${API_URL}/me`);
       setSlots(response.data);
     } catch (error) {
-      console.error("Error fetching availability:", error);
-      toast.error("Failed to load availability.");
+      toast.error("Failed to load availability");
     }
   };
 
@@ -36,137 +37,196 @@ const ManageTeacherAvailability = () => {
 
     try {
       await api.post(`${API_URL}`, { date, startTime, endTime });
-      toast.success("✅ Availability added successfully!");
+      toast.success("Slot added!");
       setDate("");
       setStartTime("");
       setEndTime("");
       fetchSlots();
     } catch (error) {
-      console.error("Error adding availability:", error);
-      toast.error("❌ Failed to add availability!");
+      toast.error("Failed to add slot");
     }
   };
 
-  const handleDeleteAvailability = async (id) => {
-    if (!window.confirm("Are you sure you want to remove this slot?")) return;
-
+  // ✔ modern popup delete
+  const confirmDelete = async () => {
     try {
-      await api.delete(`${API_URL}/${id}`);
-      toast.success("🗑️ Slot removed successfully!");
+      await api.delete(`${API_URL}/${deleteId}`);
+      toast.success("Slot removed");
+      setDeleteId(null);
       fetchSlots();
     } catch (error) {
-      console.error("Error deleting slot:", error);
-      toast.error("❌ Failed to remove slot!");
+      toast.error("Failed to remove slot");
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-700 text-white">
+    <div
+      className="
+        min-h-screen 
+        bg-gradient-to-br 
+        from-[#e3d8ff] via-[#f3d9ff] to-[#d9eaff]
+        dark:from-[#050b19] dark:via-[#0a1224] dark:to-[#0b0f19]
+        transition-all duration-500
+      "
+    >
       <Navbar />
 
-      <div className="pt-24 px-6 max-w-4xl mx-auto">
+      {/* CONFIRM MODAL */}
+      <ConfirmDialog
+        open={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={confirmDelete}
+      />
+
+      <div className="pt-28 px-6 max-w-4xl mx-auto">
+
+        {/* MAIN CARD */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl p-8"
+          className="
+            bg-white dark:bg-[#0e1525]/80 
+            backdrop-blur-xl 
+            border border-[#e5e7eb] dark:border-white/10 
+            rounded-3xl shadow-2xl 
+            p-10
+            transition-all
+          "
         >
-          <h2 className="text-3xl font-extrabold mb-8 flex items-center gap-2">
-            <Calendar size={26} /> Manage Availability
+          {/* TITLE */}
+          <h2 className="text-3xl font-bold mb-8 flex items-center gap-2 text-gray-900 dark:text-white">
+            <Calendar size={28} /> Manage Availability
           </h2>
 
-          {/* ====== FORM ====== */}
+          {/* FORM */}
           <form
             onSubmit={handleAddAvailability}
-            className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-10"
+            className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10"
           >
             <div>
-              <label className="block text-sm font-semibold mb-1 text-white/90">
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                 Date
               </label>
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full bg-white/10 border border-white/20 rounded-lg p-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                required
+                className="
+                  w-full mt-1 p-3 rounded-xl
+                  bg-white dark:bg-[#1a2336]
+                  border border-gray-300 dark:border-white/10 
+                  text-gray-900 dark:text-white
+                  focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-500
+                  outline-none transition
+                "
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold mb-1 text-white/90">
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                 Start Time
               </label>
               <input
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full bg-white/10 border border-white/20 rounded-lg p-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                required
+                className="
+                  w-full mt-1 p-3 rounded-xl
+                  bg-white dark:bg-[#1a2336]
+                  border border-gray-300 dark:border-white/10 
+                  text-gray-900 dark:text-white
+                  focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-500
+                  outline-none transition
+                "
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold mb-1 text-white/90">
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                 End Time
               </label>
               <input
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="w-full bg-white/10 border border-white/20 rounded-lg p-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                required
+                className="
+                  w-full mt-1 p-3 rounded-xl
+                  bg-white dark:bg-[#1a2336]
+                  border border-gray-300 dark:border-white/10 
+                  text-gray-900 dark:text-white
+                  focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-500
+                  outline-none transition
+                "
               />
             </div>
 
+            {/* BUTTON */}
             <div className="flex items-end">
               <button
                 type="submit"
-                className="w-full py-2.5 bg-gradient-to-r from-cyan-400 via-sky-500 to-purple-500 hover:scale-[1.03] hover:shadow-[0_0_15px_rgba(56,189,248,0.6)] transition-all rounded-lg font-semibold flex items-center justify-center gap-2"
+                className="
+                  w-full py-3.5 rounded-xl font-semibold 
+                  text-white 
+                  bg-gradient-to-r from-[#4dd0e1] via-[#5a8dee] to-[#d16ba5]
+                  shadow-lg hover:shadow-xl hover:scale-[1.03]
+                  transition-all flex items-center justify-center gap-2
+                "
               >
                 <PlusCircle size={18} /> Add Slot
               </button>
             </div>
           </form>
 
-          {/* ====== SLOTS LIST ====== */}
-          <div>
-            <h3 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-              <Clock size={22} /> Your Available Slots
-            </h3>
+          {/* LIST TITLE */}
+          <h3 className="text-2xl font-bold mb-4 flex items-center gap-2 text-gray-900 dark:text-white">
+            <Clock size={22} /> Your Available Slots
+          </h3>
 
-            {slots.length === 0 ? (
-              <p className="text-white/80 italic">
-                No availability slots added yet.
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {slots.map((slot, i) => (
-                  <motion.div
-                    key={slot.id}
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    className="bg-white/10 border border-white/20 backdrop-blur-lg rounded-xl p-4 flex justify-between items-center hover:bg-white/20 hover:scale-[1.02] transition-all shadow-md"
-                  >
-                    <div>
-                      <p className="font-semibold text-white">
-                        📅 {slot.date}
-                      </p>
-                      <p className="text-sm text-white/80 mt-1">
-                        🕒 {slot.startTime} - {slot.endTime}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => handleDeleteAvailability(slot.id)}
-                      className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-md bg-red-500 hover:bg-red-600 text-white transition-all"
-                    >
-                      <Trash2 size={14} /> Remove
-                    </button>
-                  </motion.div>
-                ))}
-              </div>
-            )}
+          {/* EMPTY */}
+          {slots.length === 0 && (
+            <p className="text-gray-500 dark:text-gray-300 italic">
+              No slots added yet.
+            </p>
+          )}
+
+          {/* SLOTS */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {slots.map((slot, i) => (
+              <motion.div
+                key={slot.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className="
+                  p-6 rounded-2xl
+                  bg-white dark:bg-[#1a2336] 
+                  border border-gray-200 dark:border-white/10 
+                  shadow-md hover:shadow-xl hover:scale-[1.02]
+                  transition-all
+                "
+              >
+                <p className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                  📅 {slot.date}
+                </p>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+                  🕒 {slot.startTime} - {slot.endTime}
+                </p>
+
+                <button
+                  onClick={() => setDeleteId(slot.id)}
+                  className="
+                    w-full py-2 rounded-lg
+                    bg-red-500 hover:bg-red-600 
+                    text-white font-semibold text-sm
+                    flex items-center justify-center gap-2
+                    transition
+                  "
+                >
+                  <Trash2 size={14} /> Remove
+                </button>
+              </motion.div>
+            ))}
           </div>
         </motion.div>
       </div>

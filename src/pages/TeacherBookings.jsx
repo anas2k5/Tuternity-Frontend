@@ -10,7 +10,6 @@ import {
   Link as LinkIcon,
   Copy,
   Save,
-  CheckCircle,
 } from "lucide-react";
 
 export default function TeacherBookings() {
@@ -21,21 +20,21 @@ export default function TeacherBookings() {
   const [editingBooking, setEditingBooking] = useState(null);
   const [meetingLink, setMeetingLink] = useState("");
 
-  // ✅ Fetch bookings
   const fetchBookings = async () => {
     setLoading(true);
     try {
       const profile = getJSON("profile");
       const teacherId = profile?.id;
+
       if (!teacherId) {
         toast.error("Teacher profile not found.");
         setLoading(false);
         return;
       }
+
       const res = await api.get(`/bookings/teacher/${teacherId}`);
       setBookings(res.data || []);
-    } catch (err) {
-      console.error(err);
+    } catch {
       toast.error("Failed to load bookings.");
     } finally {
       setLoading(false);
@@ -46,7 +45,6 @@ export default function TeacherBookings() {
     fetchBookings();
   }, []);
 
-  // ✅ Cancel Booking
   const handleCancel = async (id) => {
     if (!window.confirm("Cancel this booking?")) return;
     try {
@@ -61,7 +59,6 @@ export default function TeacherBookings() {
     }
   };
 
-  // ✅ Confirm Booking
   const handleConfirm = async (id) => {
     try {
       setUpdating(id);
@@ -75,21 +72,19 @@ export default function TeacherBookings() {
     }
   };
 
-  // ✅ Mark Booking Completed
   const handleComplete = async (id) => {
     try {
       setUpdating(id);
       await api.put(`/bookings/${id}/complete`);
-      toast.success("Booking marked as completed!");
+      toast.success("Marked as completed!");
       fetchBookings();
     } catch {
-      toast.error("Failed to mark as completed.");
+      toast.error("Failed to update.");
     } finally {
       setUpdating(null);
     }
   };
 
-  // ✅ Save Meeting Link
   const handleSaveLink = async () => {
     if (!meetingLink.trim()) return toast.error("Enter a valid meeting link.");
     try {
@@ -102,53 +97,55 @@ export default function TeacherBookings() {
       setMeetingLink("");
       fetchBookings();
     } catch {
-      toast.error("Failed to save meeting link.");
+      toast.error("Failed to save link.");
     } finally {
       setUpdating(null);
     }
   };
 
-  // ✅ Copy Link
   const handleCopyLink = (link) => {
     navigator.clipboard.writeText(link);
     toast.success("Link copied!");
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-700 text-white">
+    <div className="min-h-screen bg-landing-light dark:bg-landing-dark transition duration-500 text-gray-900 dark:text-gray-100">
       <Navbar />
 
-      <div className="pt-24 px-6 max-w-6xl mx-auto">
+      <div className="pt-24 px-6 max-w-6xl mx-auto pb-16">
         <motion.h1
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
+          transition={{ duration: 0.45 }}
           className="text-3xl font-extrabold mb-8 flex items-center gap-2"
         >
-          <BookOpen size={26} /> My Student Bookings
+          <BookOpen size={26} className="text-purple-500 dark:text-purple-300" />
+          My Student Bookings
         </motion.h1>
 
-        {loading ? (
-          <p className="text-white/90 italic">Loading...</p>
-        ) : error ? (
-          <p className="text-red-300">{error}</p>
-        ) : bookings.length === 0 ? (
-          <p className="text-white/80 italic">No bookings found.</p>
-        ) : (
+        {loading && <p className="text-gray-500 dark:text-gray-300 italic">Loading...</p>}
+
+        {!loading && error && <p className="text-red-400">{error}</p>}
+
+        {!loading && bookings.length === 0 && (
+          <p className="text-gray-500 dark:text-gray-300 italic">No bookings found.</p>
+        )}
+
+        {!loading && bookings.length > 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-xl overflow-hidden"
+            className="bg-white/80 dark:bg-white/5 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-2xl shadow-xl overflow-hidden"
           >
-            <table className="w-full table-auto text-sm">
-              <thead className="bg-white/20 text-white uppercase font-semibold">
+            <table className="w-full text-sm">
+              <thead className="bg-white/40 dark:bg-white/10 text-gray-700 dark:text-gray-200 font-semibold uppercase">
                 <tr>
                   <th className="p-3 text-left">Student</th>
                   <th className="p-3 text-left">Email</th>
                   <th className="p-3 text-left">Date</th>
                   <th className="p-3 text-left">Time</th>
                   <th className="p-3 text-left">Status</th>
-                  <th className="p-3 text-left">Meeting / Actions</th>
+                  <th className="p-3 text-left">Actions</th>
                 </tr>
               </thead>
 
@@ -159,24 +156,25 @@ export default function TeacherBookings() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.03 }}
-                    className="border-t border-white/10 hover:bg-white/10 transition-all"
+                    className="border-t border-gray-200/20 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/10 transition-all"
                   >
-                    <td className="p-3">{b.studentName || "-"}</td>
-                    <td className="p-3">{b.studentEmail || "-"}</td>
-                    <td className="p-3">{b.date || "-"}</td>
-                    <td className="p-3">{b.timeSlot || "-"}</td>
+                    <td className="p-3">{b.studentName}</td>
+                    <td className="p-3">{b.studentEmail}</td>
+                    <td className="p-3">{b.date}</td>
+                    <td className="p-3">{b.timeSlot}</td>
+
                     <td className="p-3">
                       <span
-                        className={`px-3 py-1 rounded-lg text-sm ${
-                          b.status === "PAID"
-                            ? "bg-green-500/30 text-green-200"
-                            : b.status === "COMPLETED"
-                            ? "bg-blue-500/30 text-blue-200"
+                        className={`px-3 py-1 rounded-lg text-sm font-semibold ${
+                          b.status === "COMPLETED"
+                            ? "bg-blue-500/20 text-blue-400"
                             : b.status === "CONFIRMED"
-                            ? "bg-yellow-500/30 text-yellow-200"
-                            : b.status?.includes("CANCELLED")
-                            ? "bg-red-500/30 text-red-200"
-                            : "bg-gray-400/20 text-gray-200"
+                            ? "bg-yellow-500/20 text-yellow-400"
+                            : b.status === "PAID"
+                            ? "bg-green-500/20 text-green-400"
+                            : b.status.includes("CANCEL")
+                            ? "bg-red-500/20 text-red-400"
+                            : "bg-gray-500/20 text-gray-300"
                         }`}
                       >
                         {b.status}
@@ -184,91 +182,100 @@ export default function TeacherBookings() {
                     </td>
 
                     <td className="p-3">
-                      {/* Pending */}
-                      {b.status === "PENDING" && (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleConfirm(b.id)}
-                            className="bg-green-500 hover:bg-green-600 px-3 py-1 rounded-lg text-sm"
-                          >
-                            Confirm
-                          </button>
-                          <button
-                            onClick={() => handleCancel(b.id)}
-                            className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded-lg text-sm"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      )}
+                      <div className="flex flex-col gap-2">
 
-                      {/* Confirmed or Paid */}
-                      {(b.status === "CONFIRMED" || b.status === "PAID") && (
-                        <div className="flex flex-col gap-2">
-                          <div className="flex gap-2 items-center">
-                            {b.meetingLink ? (
-                              <>
-                                <a
-                                  href={b.meetingLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-blue-300 underline flex items-center gap-1 text-sm"
-                                >
-                                  <LinkIcon size={14} /> Join
-                                </a>
-                                <button
-                                  onClick={() => handleCopyLink(b.meetingLink)}
-                                  className="text-white/80 hover:text-white flex items-center gap-1 text-sm"
-                                >
-                                  <Copy size={14} /> Copy
-                                </button>
+                        {/* PENDING BUTTONS */}
+                        {b.status === "PENDING" && (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleConfirm(b.id)}
+                              className="px-3 py-1 rounded-lg bg-green-500 hover:bg-green-600 text-xs text-white"
+                            >
+                              Confirm
+                            </button>
+
+                            <button
+                              onClick={() => handleCancel(b.id)}
+                              className="px-3 py-1 rounded-lg bg-red-500 hover:bg-red-600 text-xs text-white"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        )}
+
+                        {/* CONFIRMED / PAID */}
+                        {(b.status === "CONFIRMED" || b.status === "PAID") && (
+                          <div className="flex flex-col gap-2">
+
+                            {/* --- Meeting Controls --- */}
+                            <div className="flex gap-2 items-center">
+
+                              {b.meetingLink ? (
+                                <>
+                                  {/* JOIN */}
+                                  <a
+                                    href={b.meetingLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-blue-500/20 dark:bg-blue-500/20 text-blue-500 dark:text-blue-300 hover:bg-blue-500/30 transition"
+                                  >
+                                    <LinkIcon size={14} /> Join
+                                  </a>
+
+                                  {/* COPY */}
+                                  <button
+                                    onClick={() => handleCopyLink(b.meetingLink)}
+                                    className="flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-gray-500/20 dark:bg-gray-500/20 text-gray-700 dark:text-gray-300 hover:bg-gray-500/30 transition"
+                                  >
+                                    <Copy size={14} /> Copy
+                                  </button>
+
+                                  {/* EDIT LINK */}
+                                  <button
+                                    onClick={() => {
+                                      setEditingBooking(b);
+                                      setMeetingLink(b.meetingLink);
+                                    }}
+                                    className="px-3 py-1 rounded-full text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                                  >
+                                    Edit Link
+                                  </button>
+                                </>
+                              ) : (
                                 <button
                                   onClick={() => {
                                     setEditingBooking(b);
-                                    setMeetingLink(b.meetingLink || "");
+                                    setMeetingLink("");
                                   }}
-                                  className="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded-lg text-sm"
+                                  className="flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-blue-600 hover:bg-blue-700 text-white"
                                 >
-                                  Edit Link
+                                  <LinkIcon size={14} /> Add Link
                                 </button>
-                              </>
-                            ) : (
-                              <button
-                                onClick={() => {
-                                  setEditingBooking(b);
-                                  setMeetingLink("");
-                                }}
-                                className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded-lg text-sm flex items-center gap-1"
-                              >
-                                <LinkIcon size={14} /> Meeting Link
-                              </button>
-                            )}
+                              )}
+                            </div>
+
+                            {/* MARK COMPLETED */}
+                            <button
+                              onClick={() => handleComplete(b.id)}
+                              disabled={updating === b.id}
+                              className={`px-3 py-1 rounded-lg text-sm text-white bg-green-600 hover:bg-green-700 ${
+                                updating === b.id
+                                  ? "opacity-50 cursor-not-allowed"
+                                  : ""
+                              }`}
+                            >
+                              Mark Completed
+                            </button>
                           </div>
+                        )}
 
- {/* ✅ Mark as Completed - perfectly matched size */}
-<button
-  onClick={() => handleComplete(b.id)}
-  disabled={updating === b.id}
-  className={`bg-green-500 hover:bg-green-600 px-3 py-1 rounded-lg text-sm text-white flex items-center justify-center transition-all ${
-    updating === b.id ? "opacity-60 cursor-not-allowed" : ""
-  }`}
-  style={{
-    height: "32px", // 👈 same as Meeting Link button height
-    minWidth: "110px", // 👈 ensures width alignment
-  }}
->
-  Mark Completed
-</button>
-
-
-                        </div>
-                      )}
-
-                      {/* Completed or Cancelled */}
-                      {(b.status === "COMPLETED" ||
-                        b.status?.includes("CANCELLED")) && (
-                        <span className="text-white/60 italic">N/A</span>
-                      )}
+                        {/* COMPLETED OR CANCELLED */}
+                        {(b.status === "COMPLETED" || b.status.includes("CANCEL")) && (
+                          <span className="text-gray-400 text-xs italic">
+                            No Actions
+                          </span>
+                        )}
+                      </div>
                     </td>
                   </motion.tr>
                 ))}
@@ -278,31 +285,30 @@ export default function TeacherBookings() {
         )}
       </div>
 
-      {/* 🧩 Meeting Link Modal */}
+      {/* MEETING LINK MODAL */}
       <Modal
         show={!!editingBooking}
         onClose={() => setEditingBooking(null)}
-        title={
-          editingBooking?.meetingLink ? "Edit Meeting Link" : "Add Meeting Link"
-        }
+        title={editingBooking?.meetingLink ? "Edit Meeting Link" : "Add Meeting Link"}
       >
         <input
           type="text"
-          placeholder="Enter meeting link..."
           value={meetingLink}
           onChange={(e) => setMeetingLink(e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          placeholder="Enter meeting link..."
+          className="w-full border rounded-lg px-3 py-2 text-sm mb-4"
         />
-        <div className="flex justify-end gap-3">
+
+        <div className="flex justify-end gap-2">
           <button
             onClick={() => setEditingBooking(null)}
             className="px-4 py-2 rounded-lg text-sm bg-gray-300 hover:bg-gray-400"
           >
             Cancel
           </button>
+
           <button
             onClick={handleSaveLink}
-            disabled={updating === editingBooking?.id}
             className="px-4 py-2 rounded-lg text-sm bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1"
           >
             <Save size={14} /> Save

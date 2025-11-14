@@ -12,6 +12,9 @@ import {
   MapPin,
   FileText,
   Save,
+  Camera,
+  Pencil,
+  X,
 } from "lucide-react";
 
 export default function ManageTeacherProfile() {
@@ -23,27 +26,29 @@ export default function ManageTeacherProfile() {
     hourlyRate: "",
     city: "",
     bio: "",
+    profilePic: "",
   });
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
 
-  // ✅ Fetch teacher's own profile
+  const [loading, setLoading] = useState(true);
+  const [editMode, setEditMode] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [preview, setPreview] = useState("");
+
   useEffect(() => {
-    const fetchProfile = async () => {
+    async function fetchProfile() {
       try {
         const res = await api.get("/teachers/me");
         setProfile(res.data || {});
+        setPreview(res.data.profilePic || "");
       } catch (err) {
-        console.error("❌ Failed to fetch teacher profile:", err);
-        toast.error("Failed to load profile. Please try again later.");
+        toast.error("Failed to load profile.");
       } finally {
         setLoading(false);
       }
-    };
+    }
     fetchProfile();
   }, []);
 
-  // ✅ Handle field change (supports nested user.name)
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -57,17 +62,28 @@ export default function ManageTeacherProfile() {
     }
   };
 
-  // ✅ Save profile to backend
-  const handleSave = async (e) => {
-    e.preventDefault();
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreview(reader.result);
+      setProfile((prev) => ({ ...prev, profilePic: reader.result }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSave = async () => {
     try {
       setSaving(true);
       const res = await api.put("/teachers/me", profile);
       setProfile(res.data);
-      toast.success("✅ Profile updated successfully!");
+      setPreview(res.data.profilePic);
+      toast.success("Profile updated!");
+      setEditMode(false);
     } catch (err) {
-      console.error("❌ Update failed:", err);
-      toast.error("Failed to update profile.");
+      toast.error("Update failed.");
     } finally {
       setSaving(false);
     }
@@ -77,158 +93,258 @@ export default function ManageTeacherProfile() {
     return (
       <div>
         <Navbar />
-        <div className="p-6 text-white bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-700 min-h-screen">
-          Loading profile...
-        </div>
+        <div className="p-10 text-white">Loading...</div>
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-700 text-white">
+    <div
+      className="
+        min-h-screen 
+        bg-gradient-to-br 
+        from-[#eadcff] via-[#f6e5ff] to-[#dfe7ff]
+        dark:from-[#0b0f19] dark:via-[#0f1626] dark:to-[#0b1220]
+        transition-all duration-500
+      "
+    >
       <Navbar />
 
-      <div className="pt-24 px-6 flex justify-center">
+      <div className="pt-28 px-6 pb-20">
+
+        {/* MAIN CARD */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="w-full max-w-3xl bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-xl p-8"
+          className="
+            w-full max-w-3xl mx-auto
+            bg-white dark:bg-[#111829]/80 
+            backdrop-blur-xl 
+            border border-gray-200 dark:border-white/10 
+            shadow-2xl rounded-3xl p-10 
+            transition-all
+          "
         >
-          <h1 className="text-3xl font-extrabold text-center mb-8 flex items-center justify-center gap-2">
-            👨‍🏫 Manage Your Profile
-          </h1>
+          {/* HEADER */}
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Instructor Profile
+            </h1>
 
-          <form onSubmit={handleSave} className="space-y-5">
-            {/* Name */}
-            <div>
-              <label className="flex items-center gap-2 text-white/90 font-semibold">
-                <User size={18} /> Name
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={profile.user?.name || ""}
-                onChange={handleChange}
-                placeholder="E.g. John Doe"
-                className="w-full mt-1 bg-white/10 text-white rounded-lg p-2 border border-white/20 placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-              />
-            </div>
-
-            {/* Subject */}
-            <div>
-              <label className="flex items-center gap-2 text-white/90 font-semibold">
-                <BookOpen size={18} /> Subject
-              </label>
-              <input
-                type="text"
-                name="subject"
-                value={profile.subject || ""}
-                onChange={handleChange}
-                placeholder="E.g. Mathematics"
-                className="w-full mt-1 bg-white/10 text-white rounded-lg p-2 border border-white/20 placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-              />
-            </div>
-
-            {/* Skills */}
-            <div>
-              <label className="flex items-center gap-2 text-white/90 font-semibold">
-                <Star size={18} /> Skills
-              </label>
-              <input
-                type="text"
-                name="skills"
-                value={profile.skills || ""}
-                onChange={handleChange}
-                placeholder="E.g. React, Java, Python"
-                className="w-full mt-1 bg-white/10 text-white rounded-lg p-2 border border-white/20 placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-              />
-            </div>
-
-            {/* Experience */}
-            <div>
-              <label className="flex items-center gap-2 text-white/90 font-semibold">
-                <Briefcase size={18} /> Experience (Years)
-              </label>
-              <input
-                type="number"
-                name="experienceYears"
-                value={profile.experienceYears || ""}
-                onChange={handleChange}
-                placeholder="E.g. 5"
-                className="w-full mt-1 bg-white/10 text-white rounded-lg p-2 border border-white/20 placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-              />
-            </div>
-
-            {/* Hourly Rate */}
-            <div>
-              <label className="flex items-center gap-2 text-white/90 font-semibold">
-                <IndianRupee size={18} /> Hourly Rate (₹)
-              </label>
-              <input
-                type="number"
-                name="hourlyRate"
-                value={profile.hourlyRate || ""}
-                onChange={handleChange}
-                placeholder="E.g. 800"
-                className="w-full mt-1 bg-white/10 text-white rounded-lg p-2 border border-white/20 placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-              />
-            </div>
-
-            {/* City */}
-            <div>
-              <label className="flex items-center gap-2 text-white/90 font-semibold">
-                <MapPin size={18} /> City
-              </label>
-              <input
-                type="text"
-                name="city"
-                value={profile.city || ""}
-                onChange={handleChange}
-                placeholder="E.g. Hyderabad"
-                className="w-full mt-1 bg-white/10 text-white rounded-lg p-2 border border-white/20 placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-              />
-            </div>
-
-            {/* Bio */}
-            <div>
-              <label className="flex items-center gap-2 text-white/90 font-semibold">
-                <FileText size={18} /> Bio
-              </label>
-              <textarea
-                name="bio"
-                value={profile.bio || ""}
-                onChange={handleChange}
-                rows={4}
-                placeholder="Describe your teaching style, background, and specialties..."
-                className="w-full mt-1 bg-white/10 text-white rounded-lg p-2 border border-white/20 placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400 resize-none"
-              ></textarea>
-            </div>
-
-            {/* Buttons */}
-            <div className="flex justify-end gap-4 pt-4">
+            {!editMode ? (
               <button
-                type="button"
-                onClick={() => window.history.back()}
-                className="px-5 py-2 rounded-lg bg-white/20 hover:bg-white/30 text-white font-medium transition-all"
+                onClick={() => setEditMode(true)}
+                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold shadow-lg hover:scale-105 transition"
               >
-                Cancel
+                <Pencil size={16} /> Edit Profile
               </button>
-
+            ) : (
               <button
-                type="submit"
+                onClick={() => setEditMode(false)}
+                className="
+                  flex items-center gap-2 px-5 py-2 rounded-xl 
+                  bg-gray-300 dark:bg-white/20
+                  text-gray-900 dark:text-white 
+                  font-semibold hover:bg-gray-200 dark:hover:bg-white/30 
+                  transition
+                "
+              >
+                <X size={16} /> Cancel
+              </button>
+            )}
+          </div>
+
+          {/* PROFILE PHOTO */}
+          <div className="flex flex-col items-center mb-10">
+            <div className="relative w-36 h-36 mb-4 group">
+              <img
+                src={
+                  preview ||
+                  profile.profilePic ||
+                  `https://api.dicebear.com/7.x/personas/svg?seed=${profile.user?.name}`
+                }
+                className="
+                  rounded-full w-full h-full object-cover 
+                  border-4 border-white/80 dark:border-white/20 
+                  shadow-xl
+                "
+                alt="profile"
+              />
+
+              {editMode && (
+                <label className="
+                  absolute bottom-1 right-1 
+                  bg-gradient-to-r from-blue-500 to-purple-600 
+                  p-2 rounded-full shadow-lg cursor-pointer 
+                  hover:scale-105 transition
+                ">
+                  <Camera size={16} className="text-white" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handlePhotoUpload}
+                  />
+                </label>
+              )}
+            </div>
+
+            {editMode && profile.profilePic && (
+              <button
+                onClick={() => {
+                  setPreview("");
+                  setProfile((prev) => ({ ...prev, profilePic: "" }));
+                }}
+                className="
+                  text-sm text-red-500 dark:text-red-400 
+                  underline hover:text-red-600 transition
+                "
+              >
+                Remove Photo
+              </button>
+            )}
+
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-4">
+              {profile.user?.name}
+            </h2>
+            <p className="text-gray-500 dark:text-gray-300">
+              Update your professional details
+            </p>
+          </div>
+
+          {/* SECTIONS */}
+          <div className="space-y-10">
+
+            <ProfileSection title="Basic Information">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <ProfileField
+                  icon={<User size={18} />}
+                  label="Name"
+                  value={profile.user?.name}
+                  editable={editMode}
+                  name="name"
+                  onChange={handleChange}
+                />
+
+                <ProfileField
+                  icon={<MapPin size={18} />}
+                  label="City"
+                  value={profile.city}
+                  editable={editMode}
+                  name="city"
+                  onChange={handleChange}
+                />
+              </div>
+            </ProfileSection>
+
+            <ProfileSection title="Professional Details">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <ProfileField
+                  icon={<BookOpen size={18} />}
+                  label="Subject"
+                  value={profile.subject}
+                  editable={editMode}
+                  name="subject"
+                  onChange={handleChange}
+                />
+
+                <ProfileField
+                  icon={<Star size={18} />}
+                  label="Skills"
+                  value={profile.skills}
+                  editable={editMode}
+                  name="skills"
+                  onChange={handleChange}
+                />
+
+                <ProfileField
+                  icon={<Briefcase size={18} />}
+                  label="Experience (Years)"
+                  value={profile.experienceYears}
+                  editable={editMode}
+                  name="experienceYears"
+                  onChange={handleChange}
+                />
+
+                <ProfileField
+                  icon={<IndianRupee size={18} />}
+                  label="Hourly Rate (₹)"
+                  value={profile.hourlyRate}
+                  editable={editMode}
+                  name="hourlyRate"
+                  onChange={handleChange}
+                />
+              </div>
+            </ProfileSection>
+
+            <ProfileSection title="About You">
+              {!editMode ? (
+                <p className="bg-white/5 dark:bg-white/10 text-gray-900 dark:text-gray-200 p-4 rounded-xl">
+                  {profile.bio || "No bio added yet."}
+                </p>
+              ) : (
+                <textarea
+                  name="bio"
+                  value={profile.bio}
+                  onChange={handleChange}
+                  className="input-card h-32 resize-none"
+                />
+              )}
+            </ProfileSection>
+          </div>
+
+          {editMode && (
+            <div className="flex justify-end pt-8">
+              <button
+                onClick={handleSave}
                 disabled={saving}
-                className={`flex items-center justify-center gap-2 px-6 py-2 rounded-lg font-semibold text-white transition-all ${
-                  saving
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg"
-                }`}
+                className="
+                  flex items-center gap-2 px-6 py-3 
+                  rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 
+                  text-white font-semibold shadow-lg hover:scale-105 transition
+                "
               >
                 <Save size={18} /> {saving ? "Saving..." : "Save Changes"}
               </button>
             </div>
-          </form>
+          )}
         </motion.div>
       </div>
+    </div>
+  );
+}
+
+function ProfileSection({ title, children }) {
+  return (
+    <div>
+      <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-3">
+        {title}
+      </h3>
+      {children}
+    </div>
+  );
+}
+
+function ProfileField({ icon, label, value, editable, name, onChange }) {
+  return (
+    <div>
+      <label className="flex items-center gap-2 text-gray-700 dark:text-gray-300 font-medium mb-1">
+        {icon} {label}
+      </label>
+
+      {!editable ? (
+        <p className="bg-white/5 dark:bg-white/10 text-gray-900 dark:text-gray-200 p-3 rounded-xl">
+          {value || "—"}
+        </p>
+      ) : (
+        <input
+          autoComplete="off"
+          name={name}
+          value={value || ""}
+          onChange={onChange}
+          className="input-card"
+          placeholder={label}
+        />
+      )}
     </div>
   );
 }
