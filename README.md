@@ -1,70 +1,182 @@
-# Getting Started with Create React App
+# 🌸 TuterNity Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+The frontend for the **TuterNity Online Tutoring Platform**, built with React, Tailwind CSS, Framer Motion, and Axios.  
+It provides a clean, responsive interface for students and teachers to manage bookings, profiles, payments, dashboards, and more.
+# 🚀 Features
 
-## Available Scripts
+- 🔐 **User Authentication (Login / Register)**
+- 🧑‍🏫 **Student & Teacher Dashboards**
+- 👤 **Profile Management (Edit, Update, Upload Image)**
+- 📅 **Booking System (Search, Schedule, Cancel)**
+- ⚡ **Real-time UI Updates**
+- 💳 **Stripe Checkout Integration**
+- 🌙 **Light & Dark Mode Support**
+- 🎞️ **Framer Motion Animations**
+- 📱 **Fully Responsive UI**
+# 🧰 Tech Stack
 
-In the project directory, you can run:
+## Frontend Technologies
 
-### `npm start`
+- ⚛️ **React.js**
+- 🔀 **React Router DOM**
+- 🌐 **Axios**
+- 🎨 **Tailwind CSS**
+- 🎥 **Framer Motion**
+- 🔔 **Lucide Icons**
+- ▲ **Vercel (Deployment)**
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+# 📁 Folder Structure
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+```bash
+tuternity-frontend/
+├── public/
+├── src/
+│   ├── components/
+│   │   ├── Navbar.jsx
+│   │   ├── Footer.jsx
+│   │   ├── ProtectedRoute.jsx
+│   │   └── UI components...
+│   ├── pages/
+│   │   ├── Auth/
+│   │   ├── Student/
+│   │   ├── Teacher/
+│   │   ├── Bookings/
+│   │   └── Payments/
+│   ├── context/
+│   │   └── AuthContext.jsx
+│   ├── utils/
+│   │   ├── axios.js
+│   │   ├── storage.js
+│   │   └── constants.js
+│   ├── App.js
+│   ├── index.js
+│   └── styles.css
+├── .env
+├── package.json
+└── README.md
+```
+# 🔐 Environment Variables
 
-### `npm test`
+Create a `.env` file in the project root and add the following:
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```bash
+REACT_APP_API_URL=https://tuternity-backend.onrender.com/api
+REACT_APP_STRIPE_PUBLIC_KEY=your_public_key_here
+```
+# ⚙️ Installation & Setup
 
-### `npm run build`
+## 1. Clone the Repository
+```bash
+git clone https://github.com/anas2k5/Tuternity-Frontend.git
+cd Tuternity-Frontend
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 2. Install Dependencies
+```bash
+npm install
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 3. Run Development Server
+```bash
+npm start
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+The app will run at:
 
-### `npm run eject`
+```
+http://localhost:3000
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+# 🏗️ Build for Production
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+To create an optimized production build, run:
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+```bash
+npm run build
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+This generates a `build/` folder that can be deployed to any hosting platform.
+# 🚀 Deployment (Vercel)
 
-## Learn More
+Follow these steps to deploy the frontend on **Vercel**:
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## 1. Go to Vercel
+Open the Vercel dashboard:
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```
+https://vercel.com
+```
 
-### Code Splitting
+## 2. Import Your GitHub Repository
+- Click **New Project**
+- Select **TuterNity-Frontend** repo
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## 3. Add Environment Variables
+Under *Project Settings → Environment Variables* add:
 
-### Analyzing the Bundle Size
+```bash
+REACT_APP_API_URL=https://tuternity-backend.onrender.com/api
+REACT_APP_STRIPE_PUBLIC_KEY=your_public_key_here
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## 4. Deploy
+Click **Deploy** and wait for the build to finish.
 
-### Making a Progressive Web App
+### Live Deployment Example:
+```
+https://tuternity-frontend.vercel.app
+```
+# 🔗 API Integration
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+The frontend communicates with the backend using Axios.  
+All API requests are routed through the base URL set in your `.env` file.
 
-### Advanced Configuration
+## Backend API Base URL
+```
+https://tuternity-backend.onrender.com/api
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## Axios Base Setup
+Inside `utils/axios.js`:
 
-### Deployment
+```js
+const API = process.env.REACT_APP_API_URL;
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+export default API;
+```
 
-### `npm run build` fails to minify
+This allows all components to use:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+```js
+API + "/your-endpoint"
+```
+# 📄 Key Pages
+
+Below are the main routes available in the TuterNity frontend:
+
+```bash
+/login
+/register
+/student/dashboard
+/teacher/dashboard
+/student/bookings
+/teacher/bookings
+/paymentSuccess
+/paymentCancel
+```
+# 🤝 Contributing
+
+Pull requests, enhancements, and bug reports are always welcome.  
+Feel free to open an issue or submit a PR anytime.
+
+---
+
+# 📬 Contact
+
+**Anas Syed**
+
+**GitHub:**  
+https://github.com/anas2k5
+
+**Email:**  
+anassyed236@gmail.com
